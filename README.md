@@ -1,0 +1,300 @@
+
+# 🚚 FleetFlow
+
+### AI-Powered Enterprise Logistics & Fleet Management Platform
+
+FleetFlow is a modern enterprise logistics and fleet management platform designed to manage vehicles, drivers, customers, shipments, routes, tracking, maintenance, billing, notifications, analytics, and AI-powered operational intelligence from a unified system.
+
+The platform is being designed using a scalable backend architecture with **Java, Spring Boot, PostgreSQL, Kafka, Docker, React, Spring AI, and RAG**.
+
+---
+
+## 🎯 Vision
+
+FleetFlow aims to provide a centralized platform for organizations to manage their complete logistics lifecycle.
+
+```text
+Customers
+    ↓
+Shipments
+    ↓
+Dispatch
+    ↓
+Vehicles + Drivers
+    ↓
+Routes
+    ↓
+Tracking
+    ↓
+Delivery
+    ↓
+Billing
+    ↓
+Analytics
+    ↓
+AI Intelligence
+```
+
+---
+
+## 🧩 Core Modules
+
+```text
+FleetFlow
+│
+├── 👤 Identity & Access Management
+├── 🚛 Fleet Management
+├── 👨‍✈️ Driver Management
+├── 🏢 Customer Management
+├── 📦 Shipment Management
+├── 🗺️ Route Management
+├── 📍 Tracking
+├── 🔧 Maintenance
+├── 💰 Billing
+├── 🔔 Notifications
+├── 📊 Analytics
+└── 🤖 AI Intelligence
+```
+
+---
+
+## 👥 User Roles
+
+```text
+SUPER_ADMIN
+ADMIN
+FLEET_MANAGER
+DISPATCHER
+DRIVER
+CUSTOMER
+FINANCE_MANAGER
+```
+
+---
+
+## 🛠️ Technology Direction
+
+### Backend
+
+```text
+Java
+Spring Boot
+Spring Security
+Spring Data JPA
+PostgreSQL
+Flyway
+Kafka
+Spring AI
+```
+
+### Frontend
+
+```text
+React
+TypeScript
+Vite
+Tailwind CSS
+```
+
+### Infrastructure
+
+```text
+Docker
+Docker Compose
+GitHub Actions
+AWS
+Terraform
+Kubernetes
+```
+
+### Observability
+
+```text
+Spring Boot Actuator
+Micrometer
+Prometheus
+Grafana
+```
+
+---
+
+## 🤖 AI Intelligence
+
+AI is designed as an intelligence layer over the FleetFlow platform.
+
+Potential capabilities include:
+
+- AI Fleet Assistant.
+- Natural-language operational queries.
+- Shipment risk analysis.
+- Maintenance recommendations.
+- Incident summarization.
+- Automated operational reports.
+- Document understanding.
+- RAG-powered knowledge assistant.
+
+The core FleetFlow system does not depend on AI to perform fundamental logistics operations.
+
+---
+
+## 🏗️ Architecture Direction
+
+```text
+React Frontend
+      │
+      ▼
+API Gateway
+      │
+      ▼
+Spring Boot Backend
+      │
+ ┌────┼─────────────────┐
+ ▼    ▼                 ▼
+Fleet Shipment       Billing
+ │      │                │
+ └──────┼────────────────┘
+        ▼
+    PostgreSQL
+        │
+        ▼
+      Kafka
+        │
+        ▼
+ AI Intelligence
+        │
+   Spring AI + RAG
+        │
+        ▼
+       LLM
+```
+
+---
+
+## 📁 Repository Structure
+
+```text
+fleetflow-platform/
+│
+├── backend/
+├── frontend/
+├── infrastructure/
+│
+├── docs/
+│   ├── product-vision.md
+│   ├── requirements.md
+│   ├── use-cases.md
+│   ├── architecture.md
+│   ├── security-model.md
+│   └── roadmap.md
+│
+├── .github/
+│
+├── .gitignore
+└── README.md
+```
+
+---
+
+## 🗺️ Development Roadmap
+
+```text
+Phase 0  → Product Planning
+Phase 1  → Product Foundation
+Phase 2  → Backend Foundation
+Phase 3  → IAM / Security
+Phase 4  → Fleet + Drivers
+Phase 5  → Customers
+Phase 6  → Shipments
+Phase 7  → Dispatch + Routes
+Phase 8  → Tracking + Incidents
+Phase 9  → Maintenance
+Phase 10 → Billing
+Phase 11 → Notifications
+Phase 12 → Analytics
+Phase 13 → Kafka / Event Architecture
+Phase 14 → React Frontend
+Phase 15 → Spring AI
+Phase 16 → RAG
+Phase 17 → DevOps / AWS
+Phase 18 → Production Hardening
+Phase 19 → Enterprise Release
+```
+
+---
+
+## 📚 Documentation
+
+Detailed project documentation is maintained under:
+
+```text
+docs/
+```
+
+### Product
+
+- `product-vision.md`
+- `requirements.md`
+- `use-cases.md`
+
+### Architecture
+
+- `architecture.md`
+- `security-model.md`
+
+### Planning
+
+- `roadmap.md`
+
+---
+
+## 🚧 Project Status
+
+```text
+Phase 0 — Product Planning
+        ✅ Completed
+
+Phase 1 — Product Foundation
+        🔄 Current
+
+Phase 2 — Backend Foundation
+        ⏳ Upcoming
+```
+
+---
+
+## 🎯 Project Objective
+
+FleetFlow is being developed as a portfolio-grade enterprise application demonstrating practical knowledge of:
+
+- Java backend development.
+- Spring Boot.
+- Spring Security.
+- REST API design.
+- PostgreSQL.
+- Database migrations.
+- Event-driven architecture.
+- Kafka.
+- React.
+- Docker.
+- DevOps.
+- AWS.
+- Spring AI.
+- RAG.
+- Enterprise security.
+- Observability.
+
+---
+
+## 📌 Repository
+
+**Recommended name:**
+
+```text
+fleetflow-platform
+```
+
+**Short description:**
+
+```text
+AI-powered enterprise logistics and fleet management platform built with Spring Boot, React, PostgreSQL, Kafka, Docker, and Spring AI.
+```
