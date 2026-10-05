@@ -1,0 +1,81 @@
+spring:
+
+  application:
+    name: fleetflow-backend
+
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5433/fleetflow}
+    username: ${DB_USERNAME:fleetflow}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+    hikari:
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:10}
+      minimum-idle: ${DB_POOL_MIN_IDLE:2}
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  jpa:
+    open-in-view: false
+
+    hibernate:
+      ddl-auto: validate
+
+    properties:
+      hibernate:
+        format_sql: false
+        jdbc:
+          time_zone: UTC
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    validate-on-migrate: true
+    clean-disabled: true
+
+  jackson:
+    time-zone: UTC
+
+server:
+  port: ${SERVER_PORT:8080}
+
+  shutdown: graceful
+
+management:
+
+  endpoints:
+    web:
+      exposure:
+        include:
+          - health
+          - info
+          - metrics
+          - prometheus
+
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: when_authorized
+
+  health:
+    livenessstate:
+      enabled: true
+
+    readinessstate:
+      enabled: true
+
+info:
+  app:
+    name: FleetFlow
+    description: AI-Powered Enterprise Logistics & Fleet Management Platform
+    version: 0.0.1
+
+logging:
+  level:
+    root: INFO
+    com.fleetflow: INFO
