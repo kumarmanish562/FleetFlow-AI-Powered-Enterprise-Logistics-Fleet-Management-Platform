@@ -1,3 +1,19 @@
+-- ============================================================
+-- FleetFlow Database - V1
+-- Initial Database Schema
+-- ============================================================
+
+-- ------------------------------------------------------------
+-- Extensions
+-- ------------------------------------------------------------
+
+CREATE EXTENSION IF NOT EXISTS vector;
+
+
+-- ------------------------------------------------------------
+-- Application Metadata
+-- ------------------------------------------------------------
+
 CREATE TABLE application_metadata (
     id BIGSERIAL PRIMARY KEY,
 
@@ -5,5 +21,7 @@ CREATE TABLE application_metadata (
 
     environment VARCHAR(30) NOT NULL,
 
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
