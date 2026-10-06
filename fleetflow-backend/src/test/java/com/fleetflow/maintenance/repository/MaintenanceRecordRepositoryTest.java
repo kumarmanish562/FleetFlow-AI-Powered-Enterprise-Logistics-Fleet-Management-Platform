@@ -14,6 +14,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -24,8 +25,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @Transactional
-class MaintenanceRecordRepositoryTest
-        extends PostgresContainerTest {
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
+class MaintenanceRecordRepositoryTest extends PostgresContainerTest {
 
     @Autowired
     private MaintenanceRecordRepository maintenanceRecordRepository;
@@ -41,84 +42,52 @@ class MaintenanceRecordRepositoryTest
     @BeforeEach
     void setUp() {
 
-        /*
-         * Clean maintenance records first.
-         */
         maintenanceRecordRepository.deleteAll();
 
-        /*
-         * Create VehicleType.
-         *
-         * Vehicle requires VehicleType.
-         */
-        VehicleType vehicleType =
-                VehicleType.builder()
-                        .name("Test Truck")
-                        .description("Test vehicle type")
-                        .maxLoadKg(new BigDecimal("10000"))
-                        .build();
+        VehicleType vehicleType = VehicleType.builder()
+                .name("Test Truck")
+                .description("Test vehicle type")
+                .maxLoadKg(new BigDecimal("10000"))
+                .build();
 
-        vehicleType =
-                vehicleTypeRepository.saveAndFlush(vehicleType);
+        vehicleType = vehicleTypeRepository.saveAndFlush(vehicleType);
 
-        /*
-         * Create Vehicle using the VehicleType.
-         */
-        vehicle =
-                Vehicle.builder()
-                        .vehicleType(vehicleType)
-                        .registrationNumber("TEST-MR-001")
-                        .vin("TESTVIN123456789")
-                        .manufacturer("Tata")
-                        .model("Prima")
-                        .manufactureYear(2025)
-                        .fuelType(FuelType.DIESEL)
-                        .status(VehicleStatus.AVAILABLE)
-                        .currentOdometer(new BigDecimal("1000"))
-                        .build();
+        vehicle = Vehicle.builder()
+                .vehicleType(vehicleType)
+                .registrationNumber("TEST-MR-001")
+                .vin("TESTVIN123456789")
+                .manufacturer("Tata")
+                .model("Prima")
+                .manufactureYear(2025)
+                .fuelType(FuelType.DIESEL)
+                .status(VehicleStatus.AVAILABLE)
+                .currentOdometer(new BigDecimal("1000"))
+                .build();
 
-        vehicle =
-                vehicleRepository.saveAndFlush(vehicle);
+        vehicle = vehicleRepository.saveAndFlush(vehicle);
     }
 
     @Test
     void shouldFindMaintenanceHistory() {
 
-        /*
-         * Create maintenance record.
-         */
-        MaintenanceRecord record =
-                MaintenanceRecord.builder()
-                        .vehicle(vehicle)
-                        .maintenanceType(MaintenanceType.SERVICE)
-                        .maintenanceDate(LocalDate.now())
-                        .cost(new BigDecimal("5000"))
-                        .status(MaintenanceStatus.COMPLETED)
-                        .build();
+        MaintenanceRecord record = MaintenanceRecord.builder()
+                .vehicle(vehicle)
+                .maintenanceType(MaintenanceType.SERVICE)
+                .maintenanceDate(LocalDate.now())
+                .cost(new BigDecimal("5000"))
+                .status(MaintenanceStatus.COMPLETED)
+                .build();
 
-        /*
-         * Save maintenance record.
-         */
-        maintenanceRecordRepository
-                .saveAndFlush(record);
+        maintenanceRecordRepository.saveAndFlush(record);
 
-        /*
-         * Find maintenance history for vehicle.
-         */
         List<MaintenanceRecord> result =
-                maintenanceRecordRepository
-                        .findByVehicleIdOrderByMaintenanceDateDesc(
-                                vehicle.getId()
-                        );
+                maintenanceRecordRepository.findByVehicleIdOrderByMaintenanceDateDesc(
+                        vehicle.getId()
+                );
 
-        /*
-         * Verify result.
-         */
-        assertThat(result)
-                .hasSize(1);
+        assertThat(result).hasSize(1);
 
-        MaintenanceRecord savedRecord =
-                result.get(0);
+        MaintenanceRecord savedRecord = result.get(0);
 
         assertThat(savedRecord.getVehicle())
                 .isEqualTo(vehicle);
