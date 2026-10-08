@@ -1,3 +1,4 @@
+
 package com.fleetflow.vehicle.repository;
 
 import com.fleetflow.support.PostgresContainerTest;
@@ -11,16 +12,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.test.annotation.DirtiesContext;
 
-
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-class VehicleRepositoryTest
-        extends PostgresContainerTest {
+class VehicleRepositoryTest extends PostgresContainerTest {
 
     @Autowired
     private VehicleRepository vehicleRepository;
@@ -47,6 +47,10 @@ class VehicleRepositoryTest
                 );
     }
 
+    // ============================================================
+    // SAVE VEHICLE
+    // ============================================================
+
     @Test
     void shouldSaveVehicle() {
 
@@ -71,11 +75,13 @@ class VehicleRepositoryTest
         assertThat(saved.getId())
                 .isNotNull();
 
-        assertThat(
-                saved.getRegistrationNumber()
-        )
+        assertThat(saved.getRegistrationNumber())
                 .isEqualTo("CG04AB1234");
     }
+
+    // ============================================================
+    // FIND BY REGISTRATION NUMBER
+    // ============================================================
 
     @Test
     void shouldFindVehicleByRegistrationNumber() {
@@ -96,15 +102,58 @@ class VehicleRepositoryTest
 
         vehicleRepository.saveAndFlush(vehicle);
 
-        var result =
+        Optional<Vehicle> result =
                 vehicleRepository
-                        .findByRegistrationNumber(
+                        .findByRegistrationNumberIgnoreCase(
                                 "CG04AB5678"
                         );
 
         assertThat(result)
                 .isPresent();
+
+        assertThat(result.get().getRegistrationNumber())
+                .isEqualTo("CG04AB5678");
     }
+
+    // ============================================================
+    // FIND BY REGISTRATION NUMBER - IGNORE CASE
+    // ============================================================
+
+    @Test
+    void shouldFindVehicleByRegistrationNumberIgnoringCase() {
+
+        Vehicle vehicle =
+                Vehicle.builder()
+                        .vehicleType(vehicleType)
+                        .registrationNumber("CG04AB7777")
+                        .vin("VIN777777777")
+                        .manufacturer("Tata")
+                        .model("Ace")
+                        .fuelType(FuelType.DIESEL)
+                        .status(VehicleStatus.AVAILABLE)
+                        .currentOdometer(
+                                BigDecimal.ZERO
+                        )
+                        .build();
+
+        vehicleRepository.saveAndFlush(vehicle);
+
+        Optional<Vehicle> result =
+                vehicleRepository
+                        .findByRegistrationNumberIgnoreCase(
+                                "cg04ab7777"
+                        );
+
+        assertThat(result)
+                .isPresent();
+
+        assertThat(result.get().getRegistrationNumber())
+                .isEqualTo("CG04AB7777");
+    }
+
+    // ============================================================
+    // FIND VEHICLES BY STATUS
+    // ============================================================
 
     @Test
     void shouldFindVehiclesByStatus() {
@@ -140,3 +189,4 @@ class VehicleRepositoryTest
                 );
     }
 }
+

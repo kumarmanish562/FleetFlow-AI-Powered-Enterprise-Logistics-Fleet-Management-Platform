@@ -1,6 +1,6 @@
 package com.fleetflow.security;
 
-import com.fleetflow.exception.ErrorResponse;
+import com.fleetflow.common.exception.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;

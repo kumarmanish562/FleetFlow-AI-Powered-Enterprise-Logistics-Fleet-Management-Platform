@@ -8,6 +8,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.ForeignKey;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
@@ -32,6 +34,16 @@ import java.math.BigDecimal;
                         name = "uk_vehicles_vin",
                         columnNames = "vin"
                 )
+        },
+        indexes = {
+                @Index(
+                        name = "idx_vehicles_type",
+                        columnList = "vehicle_type_id"
+                ),
+                @Index(
+                        name = "idx_vehicles_status",
+                        columnList = "status"
+                )
         }
 )
 @Getter
@@ -44,7 +56,10 @@ public class Vehicle extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(
             name = "vehicle_type_id",
-            nullable = false
+            nullable = false,
+            foreignKey = @ForeignKey(
+                    name = "fk_vehicles_type"
+            )
     )
     private VehicleType vehicleType;
 
@@ -55,7 +70,9 @@ public class Vehicle extends BaseEntity {
     )
     private String registrationNumber;
 
-    @Column(length = 100)
+    @Column(
+            length = 100
+    )
     private String vin;
 
     @Column(
@@ -70,7 +87,9 @@ public class Vehicle extends BaseEntity {
     )
     private String model;
 
-    @Column(name = "manufacture_year")
+    @Column(
+            name = "manufacture_year"
+    )
     private Integer manufactureYear;
 
     @Enumerated(EnumType.STRING)
@@ -95,6 +114,5 @@ public class Vehicle extends BaseEntity {
             scale = 2
     )
     @Builder.Default
-    private BigDecimal currentOdometer =
-            BigDecimal.ZERO;
+    private BigDecimal currentOdometer = BigDecimal.ZERO;
 }
