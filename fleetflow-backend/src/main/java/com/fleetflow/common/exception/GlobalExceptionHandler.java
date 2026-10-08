@@ -1,4 +1,4 @@
-package com.fleetflow.exception;
+package com.fleetflow.common.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
@@ -17,11 +17,30 @@ import java.util.List;
 public class GlobalExceptionHandler {
 
     // ============================================================
+    // RESOURCE NOT FOUND
+    // ============================================================
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleResourceNotFound(
+            ResourceNotFoundException exception,
+            HttpServletRequest request
+    ) {
+
+        return build(
+                HttpStatus.NOT_FOUND,
+                "NOT_FOUND",
+                exception.getMessage(),
+                request,
+                List.of()
+        );
+    }
+
+    // ============================================================
     // DUPLICATE RESOURCE
     // ============================================================
 
     @ExceptionHandler(DuplicateResourceException.class)
-    public ResponseEntity<ErrorResponse> handleDuplicate(
+    public ResponseEntity<ErrorResponse> handleDuplicateResource(
             DuplicateResourceException exception,
             HttpServletRequest request
     ) {
@@ -36,18 +55,37 @@ public class GlobalExceptionHandler {
     }
 
     // ============================================================
-    // RESOURCE NOT FOUND
+    // CONFLICT
     // ============================================================
 
-    @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleNotFound(
-            ResourceNotFoundException exception,
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity<ErrorResponse> handleConflict(
+            ConflictException exception,
             HttpServletRequest request
     ) {
 
         return build(
-                HttpStatus.NOT_FOUND,
-                "NOT_FOUND",
+                HttpStatus.CONFLICT,
+                "CONFLICT",
+                exception.getMessage(),
+                request,
+                List.of()
+        );
+    }
+
+    // ============================================================
+    // BAD REQUEST
+    // ============================================================
+
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<ErrorResponse> handleBadRequest(
+            BadRequestException exception,
+            HttpServletRequest request
+    ) {
+
+        return build(
+                HttpStatus.BAD_REQUEST,
+                "BAD_REQUEST",
                 exception.getMessage(),
                 request,
                 List.of()
@@ -78,7 +116,7 @@ public class GlobalExceptionHandler {
     // ============================================================
 
     @ExceptionHandler(DisabledException.class)
-    public ResponseEntity<ErrorResponse> handleDisabled(
+    public ResponseEntity<ErrorResponse> handleDisabledAccount(
             DisabledException exception,
             HttpServletRequest request
     ) {
@@ -97,7 +135,7 @@ public class GlobalExceptionHandler {
     // ============================================================
 
     @ExceptionHandler(LockedException.class)
-    public ResponseEntity<ErrorResponse> handleLocked(
+    public ResponseEntity<ErrorResponse> handleLockedAccount(
             LockedException exception,
             HttpServletRequest request
     ) {
@@ -106,6 +144,31 @@ public class GlobalExceptionHandler {
                 HttpStatus.UNAUTHORIZED,
                 "UNAUTHORIZED",
                 "User account is locked",
+                request,
+                List.of()
+        );
+    }
+
+    // ============================================================
+    // SECURITY EXCEPTION
+    // ============================================================
+
+    @ExceptionHandler(SecurityException.class)
+    public ResponseEntity<ErrorResponse> handleSecurityException(
+            SecurityException exception,
+            HttpServletRequest request
+    ) {
+
+        String message = exception.getMessage();
+
+        if (message == null || message.isBlank()) {
+            message = "Access denied";
+        }
+
+        return build(
+                HttpStatus.UNAUTHORIZED,
+                "UNAUTHORIZED",
+                message,
                 request,
                 List.of()
         );
@@ -125,10 +188,10 @@ public class GlobalExceptionHandler {
                 exception.getBindingResult()
                         .getFieldErrors()
                         .stream()
-                        .map(error ->
+                        .map(fieldError ->
                                 new ValidationError(
-                                        error.getField(),
-                                        error.getDefaultMessage()
+                                        fieldError.getField(),
+                                        fieldError.getDefaultMessage()
                                 )
                         )
                         .toList();
@@ -147,7 +210,7 @@ public class GlobalExceptionHandler {
     // ============================================================
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleGeneric(
+    public ResponseEntity<ErrorResponse> handleGenericException(
             Exception exception,
             HttpServletRequest request
     ) {
@@ -186,20 +249,4 @@ public class GlobalExceptionHandler {
                 .status(status)
                 .body(response);
     }
-
-    @ExceptionHandler(SecurityException.class)
-    public ResponseEntity<ErrorResponse> handleSecurityException(
-            SecurityException exception,
-            HttpServletRequest request
-    ) {
-
-        return build(
-                HttpStatus.UNAUTHORIZED,
-                "UNAUTHORIZED",
-                exception.getMessage(),
-                request,
-                List.of()
-        );
-    }
-
 }

@@ -1,4 +1,4 @@
-package com.fleetflow.exception;
+package com.fleetflow.common.exception;
 
 public class ResourceNotFoundException
         extends RuntimeException {
