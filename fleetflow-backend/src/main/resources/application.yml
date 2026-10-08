@@ -39,3 +39,11 @@ spring:
 
   jackson:
     time-zone: UTC
+
+
+fleetflow:
+  security:
+    jwt:
+      secret: ${JWT_SECRET}
+      access-token-expiration: ${JWT_ACCESS_EXPIRATION:900000}
+      refresh-token-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
