@@ -1,10 +1,10 @@
 package com.fleetflow.exception;
 
-import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 public record ErrorResponse(
-        Instant timestamp,
+        OffsetDateTime timestamp,
         int status,
         String error,
         String message,
