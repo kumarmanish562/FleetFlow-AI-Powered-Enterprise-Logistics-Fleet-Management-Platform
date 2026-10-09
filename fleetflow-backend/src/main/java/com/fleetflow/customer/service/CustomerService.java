@@ -6,7 +6,6 @@ import com.fleetflow.customer.dto.CustomerStatusUpdateRequest;
 import com.fleetflow.customer.dto.CustomerUpdateRequest;
 import com.fleetflow.customer.enums.CustomerStatus;
 import com.fleetflow.customer.enums.CustomerType;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -14,31 +13,26 @@ import java.util.UUID;
 
 public interface CustomerService {
 
-    CustomerResponse create(CustomerCreateRequest request);
+    CustomerResponse createCustomer(
+            CustomerCreateRequest request
+    );
 
-    Page<CustomerResponse> findAll(
-            String search,
+    CustomerResponse getCustomerById(UUID id);
+
+    Page<CustomerResponse> getCustomers(
             CustomerStatus status,
             CustomerType type,
+            String search,
             Pageable pageable
     );
 
-    CustomerResponse findById(
+    CustomerResponse updateCustomer(
             UUID id,
-            String authenticatedEmail,
-            boolean administrator
+            CustomerUpdateRequest request
     );
 
-    CustomerResponse update(
+    CustomerResponse updateCustomerStatus(
             UUID id,
-            CustomerUpdateRequest request,
-            String authenticatedEmail,
-            boolean administrator
-    );
-
-    CustomerResponse changeStatus(
-            UUID id,
-            CustomerStatusUpdateRequest request,
-            boolean superAdministrator
+            CustomerStatusUpdateRequest request
     );
 }

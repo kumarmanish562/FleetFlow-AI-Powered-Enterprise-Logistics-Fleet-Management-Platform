@@ -9,25 +9,17 @@ import com.fleetflow.customer.enums.CustomerStatus;
 import com.fleetflow.customer.enums.CustomerType;
 import com.fleetflow.customer.mapper.CustomerMapper;
 import com.fleetflow.customer.repository.CustomerRepository;
-
-import jakarta.persistence.criteria.Predicate;
-
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
 import java.util.UUID;
 
 @Service
-@Transactional
+@Transactional(readOnly = true)
 public class CustomerServiceImpl implements CustomerService {
 
     private final CustomerRepository customerRepository;
@@ -35,320 +27,170 @@ public class CustomerServiceImpl implements CustomerService {
 
     public CustomerServiceImpl(
             CustomerRepository customerRepository,
-            CustomerMapper customerMapper) {
-
+            CustomerMapper customerMapper
+    ) {
         this.customerRepository = customerRepository;
         this.customerMapper = customerMapper;
     }
 
     @Override
-    public CustomerResponse create(CustomerCreateRequest request) {
-
-        validateCompanyName(
+    @Transactional
+    public CustomerResponse createCustomer(
+            CustomerCreateRequest request
+    ) {
+        validateBusinessRules(
                 request.customerType(),
-                request.companyName()
+                request.name()
         );
 
         String email = normalizeEmail(request.email());
 
-        if (customerRepository.existsByEmailIgnoreCase(email)) {
+        if (email != null
+                && customerRepository.existsByEmailIgnoreCase(email)) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT,
                     "A customer with this email already exists"
             );
         }
 
-        String customerCode = generateCustomerCode();
+        Customer customer = customerMapper.toEntity(request);
 
-        Customer customer = Customer.create(
-                customerCode,
-                request.customerType(),
-                request.companyName(),
-                request.firstName(),
-                request.lastName(),
-                email,
-                request.phone(),
-                request.taxIdentifier(),
-                customerMapper.toAddress(request.billingAddress()),
-                customerMapper.toAddress(request.shippingAddress())
-        );
+        customer.setStatus(CustomerStatus.ACTIVE);
 
-        try {
-            Customer saved = customerRepository.saveAndFlush(customer);
-            return customerMapper.toResponse(saved);
+        Customer saved = customerRepository.save(customer);
 
-        } catch (DataIntegrityViolationException exception) {
-            // Covers concurrent requests and database uniqueness checks.
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "Customer email or code already exists"
-            );
-        }
+        return customerMapper.toResponse(saved);
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public Page<CustomerResponse> findAll(
-            String search,
+    public CustomerResponse getCustomerById(UUID id) {
+        return customerMapper.toResponse(findCustomer(id));
+    }
+
+    @Override
+    public Page<CustomerResponse> getCustomers(
             CustomerStatus status,
             CustomerType type,
-            Pageable pageable) {
+            String search,
+            Pageable pageable
+    ) {
+        String normalizedSearch =
+                search == null || search.isBlank()
+                        ? null
+                        : search.trim();
 
-        Specification<Customer> specification =
-                buildSpecification(search, status, type);
-
-        return customerRepository.findAll(
-                specification,
+        return customerRepository.searchCustomers(
+                status,
+                type,
+                normalizedSearch,
                 pageable
         ).map(customerMapper::toResponse);
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public CustomerResponse findById(
+    @Transactional
+    public CustomerResponse updateCustomer(
             UUID id,
-            String authenticatedEmail,
-            boolean administrator) {
+            CustomerUpdateRequest request
+    ) {
+        Customer customer = findCustomer(id);
 
-        Customer customer = getCustomer(id);
-
-        verifyOwnership(
-                customer,
-                authenticatedEmail,
-                administrator
-        );
-
-        return customerMapper.toResponse(customer);
-    }
-
-    @Override
-    public CustomerResponse update(
-            UUID id,
-            CustomerUpdateRequest request,
-            String authenticatedEmail,
-            boolean administrator) {
-
-        Customer customer = getCustomer(id);
-
-        verifyOwnership(
-                customer,
-                authenticatedEmail,
-                administrator
-        );
-
-        if (customer.getStatus() == CustomerStatus.SUSPENDED) {
+        if (customer.getStatus() == CustomerStatus.BLOCKED) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT,
-                    "A suspended customer cannot be modified"
+                    "Blocked customers cannot be modified"
             );
         }
 
-        validateCompanyName(
-                customer.getCustomerType(),
-                request.companyName()
+        validateBusinessRules(
+                request.customerType(),
+                request.name()
         );
 
         String email = normalizeEmail(request.email());
 
-        if (customerRepository.existsByEmailIgnoreCaseAndIdNot(
-                email,
-                id)) {
-
+        if (email != null
+                && customerRepository
+                .existsByEmailIgnoreCaseAndIdNot(email, id)) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT,
                     "A customer with this email already exists"
             );
         }
 
-        customer.updateProfile(
-                request.companyName(),
-                request.firstName(),
-                request.lastName(),
-                email,
-                request.phone(),
-                request.taxIdentifier(),
-                customerMapper.toAddress(request.billingAddress()),
-                customerMapper.toAddress(request.shippingAddress())
+        customerMapper.updateEntity(customer, request);
+
+        return customerMapper.toResponse(
+                customerRepository.save(customer)
         );
-
-        try {
-            Customer saved = customerRepository.saveAndFlush(customer);
-            return customerMapper.toResponse(saved);
-
-        } catch (DataIntegrityViolationException exception) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "Customer email conflicts with an existing record"
-            );
-        }
     }
 
     @Override
-    public CustomerResponse changeStatus(
+    @Transactional
+    public CustomerResponse updateCustomerStatus(
             UUID id,
-            CustomerStatusUpdateRequest request,
-            boolean superAdministrator) {
+            CustomerStatusUpdateRequest request
+    ) {
+        Customer customer = findCustomer(id);
 
-        Customer customer = getCustomer(id);
-        CustomerStatus currentStatus = customer.getStatus();
-        CustomerStatus newStatus = request.status();
-
-        if (currentStatus == newStatus) {
-            return customerMapper.toResponse(customer);
-        }
-
-        /*
-         * Only a SUPER_ADMIN can reactivate a suspended customer.
-         * Ordinary administrators may deactivate or suspend an active
-         * customer and reactivate an inactive customer.
-         */
-        if (currentStatus == CustomerStatus.SUSPENDED
-                && !superAdministrator) {
-
+        if (customer.getStatus() == CustomerStatus.BLOCKED
+                && request.status() != CustomerStatus.BLOCKED) {
             throw new ResponseStatusException(
-                    HttpStatus.FORBIDDEN,
-                    "Only a super administrator can change a suspended customer"
+                    HttpStatus.CONFLICT,
+                    "A blocked customer cannot be reactivated"
             );
         }
 
-        customer.changeStatus(newStatus);
+        customer.setStatus(request.status());
 
         return customerMapper.toResponse(
-                customerRepository.saveAndFlush(customer)
+                customerRepository.save(customer)
         );
     }
 
-    private Customer getCustomer(UUID id) {
+    private Customer findCustomer(UUID id) {
         return customerRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "Customer not found"
-                ));
-    }
-
-    private void verifyOwnership(
-            Customer customer,
-            String authenticatedEmail,
-            boolean administrator) {
-
-        if (administrator) {
-            return;
-        }
-
-        if (authenticatedEmail == null
-                || customer.getEmail() == null
-                || !customer.getEmail().equalsIgnoreCase(
-                authenticatedEmail.trim())) {
-
-            // Return 404 to avoid revealing another customer's record.
-            throw new ResponseStatusException(
-                    HttpStatus.NOT_FOUND,
-                    "Customer not found"
-            );
-        }
-    }
-
-    private Specification<Customer> buildSpecification(
-            String search,
-            CustomerStatus status,
-            CustomerType type) {
-
-        return (root, query, criteriaBuilder) -> {
-
-            List<Predicate> predicates = new ArrayList<>();
-
-            if (search != null && !search.isBlank()) {
-
-                String pattern = "%"
-                        + search.trim().toLowerCase(Locale.ROOT)
-                        + "%";
-
-                predicates.add(criteriaBuilder.or(
-                        criteriaBuilder.like(
-                                criteriaBuilder.lower(root.get("customerCode")),
-                                pattern
-                        ),
-                        criteriaBuilder.like(
-                                criteriaBuilder.lower(root.get("name")),
-                                pattern
-                        ),
-                        criteriaBuilder.like(
-                                criteriaBuilder.lower(root.get("firstName")),
-                                pattern
-                        ),
-                        criteriaBuilder.like(
-                                criteriaBuilder.lower(root.get("lastName")),
-                                pattern
-                        ),
-                        criteriaBuilder.like(
-                                criteriaBuilder.lower(root.get("email")),
-                                pattern
-                        ),
-                        criteriaBuilder.like(
-                                criteriaBuilder.lower(root.get("companyName")),
-                                pattern
-                        )
-                ));
-            }
-
-            if (status != null) {
-                predicates.add(
-                        criteriaBuilder.equal(
-                                root.get("status"),
-                                status
+                .orElseThrow(() ->
+                        new ResponseStatusException(
+                                HttpStatus.NOT_FOUND,
+                                "Customer not found: " + id
                         )
                 );
-            }
-
-            if (type != null) {
-                predicates.add(
-                        criteriaBuilder.equal(
-                                root.get("customerType"),
-                                type
-                        )
-                );
-            }
-
-            return criteriaBuilder.and(
-                    predicates.toArray(new Predicate[0])
-            );
-        };
     }
 
-    private void validateCompanyName(
-            CustomerType customerType,
-            String companyName) {
-
-        if (customerType == CustomerType.BUSINESS
-                && (companyName == null || companyName.isBlank())) {
-
+    private void validateBusinessRules(
+            CustomerType type,
+            String name
+    ) {
+        if (type == null) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "Company name is required for business customers"
+                    "Customer type is required"
             );
         }
+
+        if (name == null || name.isBlank()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Customer name is required"
+            );
+        }
+
+        /*
+         * This version uses one shared name field, matching
+         * your existing Customer entity and SQL.
+         *
+         * If business customers must have a separate companyName,
+         * add that field to the entity, DTOs, and database through
+         * a new migration before enforcing that rule.
+         */
     }
 
     private String normalizeEmail(String email) {
         if (email == null || email.isBlank()) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Email is required"
-            );
+            return null;
         }
 
-        return email.trim().toLowerCase(Locale.ROOT);
-    }
-
-    private String generateCustomerCode() {
-        /*
-         * UUID randomness makes accidental collisions very unlikely.
-         * The unique database constraint remains the final guarantee.
-         */
-        return "CUS-" + UUID.randomUUID()
-                .toString()
-                .replace("-", "")
-                .substring(0, 12)
-                .toUpperCase(Locale.ROOT);
+        return email.trim().toLowerCase(java.util.Locale.ROOT);
     }
 }

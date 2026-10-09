@@ -1,8 +1,6 @@
 package com.fleetflow.customer.dto;
 
 import com.fleetflow.customer.enums.CustomerType;
-
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -11,42 +9,27 @@ import jakarta.validation.constraints.Size;
 
 public record CustomerCreateRequest(
 
-        @NotNull
-        CustomerType customerType,
+        @NotBlank(message = "Customer name is required")
+        @Size(max = 200, message = "Name cannot exceed 200 characters")
+        String name,
 
-        @Size(max = 200)
-        String companyName,
-
-        @NotBlank
-        @Size(max = 100)
-        String firstName,
-
-        @NotBlank
-        @Size(max = 100)
-        String lastName,
-
-        @NotBlank
-        @Email
-        @Size(max = 320)
+        @Email(message = "Email must be valid")
+        @Size(max = 320, message = "Email cannot exceed 320 characters")
         String email,
 
-        @NotBlank
         @Pattern(
-                regexp = "^\\+?[1-9]\\d{7,14}$",
-                message = "Phone must be a valid international number"
+                regexp = "^\\+?[0-9() .-]{7,30}$",
+                message = "Phone number format is invalid"
         )
-        @Size(max = 30)
         String phone,
 
-        @Size(max = 100)
-        String taxIdentifier,
+        @NotNull(message = "Customer type is required")
+        CustomerType customerType,
 
-        @NotNull
-        @Valid
-        CustomerAddressRequest billingAddress,
+        @Size(max = 10000)
+        String billingAddress,
 
-        @Valid
-        CustomerAddressRequest shippingAddress
-
+        @Size(max = 10000)
+        String shippingAddress
 ) {
 }

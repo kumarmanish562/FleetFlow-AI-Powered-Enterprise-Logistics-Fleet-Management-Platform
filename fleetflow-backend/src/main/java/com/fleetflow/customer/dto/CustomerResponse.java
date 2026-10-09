@@ -7,34 +7,15 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 public record CustomerResponse(
-
         UUID id,
-
-        String customerCode,
-
-        CustomerType customerType,
-
-        String companyName,
-
-        String firstName,
-
-        String lastName,
-
+        String name,
         String email,
-
         String phone,
-
-        String taxIdentifier,
-
-        CustomerAddressRequest billingAddress,
-
-        CustomerAddressRequest shippingAddress,
-
+        CustomerType customerType,
         CustomerStatus status,
-
+        String billingAddress,
+        String shippingAddress,
         OffsetDateTime createdAt,
-
         OffsetDateTime updatedAt
-
 ) {
 }
