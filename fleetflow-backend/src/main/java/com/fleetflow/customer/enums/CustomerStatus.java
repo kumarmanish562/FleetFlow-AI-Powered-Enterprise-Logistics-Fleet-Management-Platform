@@ -4,5 +4,5 @@ public enum CustomerStatus {
 
     ACTIVE,
     INACTIVE,
-    BLOCKED
+    SUSPENDED
 }
