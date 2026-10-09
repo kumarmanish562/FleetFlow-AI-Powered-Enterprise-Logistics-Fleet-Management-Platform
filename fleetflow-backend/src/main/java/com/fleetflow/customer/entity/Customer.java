@@ -23,10 +23,7 @@ import lombok.Setter;
 @Builder
 public class Customer extends BaseEntity {
 
-    @Column(
-            nullable = false,
-            length = 200
-    )
+    @Column(nullable = false, length = 200)
     private String name;
 
     @Column(length = 320)
@@ -44,10 +41,7 @@ public class Customer extends BaseEntity {
     private CustomerType customerType;
 
     @Enumerated(EnumType.STRING)
-    @Column(
-            nullable = false,
-            length = 30
-    )
+    @Column(nullable = false, length = 30)
     private CustomerStatus status;
 
     @Column(
