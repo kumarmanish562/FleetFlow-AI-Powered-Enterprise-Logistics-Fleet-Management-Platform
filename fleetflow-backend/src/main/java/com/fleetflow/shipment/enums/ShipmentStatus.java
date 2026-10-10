@@ -1,7 +1,6 @@
 package com.fleetflow.shipment.enums;
 
 public enum ShipmentStatus {
-
     CREATED,
     CONFIRMED,
     PICKUP_SCHEDULED,
