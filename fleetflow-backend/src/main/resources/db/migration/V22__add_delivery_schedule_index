@@ -1,0 +1,2 @@
+CREATE INDEX IF NOT EXISTS idx_deliveries_scheduled
+    ON deliveries(scheduled_at);

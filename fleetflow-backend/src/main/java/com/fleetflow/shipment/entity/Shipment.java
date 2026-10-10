@@ -185,4 +185,29 @@ public class Shipment extends BaseEntity {
         }
         this.priority = priority;
     }
+
+
+    public void assignRoute(Route route) {
+
+        if (route == null) {
+            throw new IllegalArgumentException(
+                    "Route is required"
+            );
+        }
+
+        if (this.status != ShipmentStatus.CONFIRMED) {
+            throw new IllegalStateException(
+                    "Only confirmed shipments can be assigned to a route"
+            );
+        }
+
+        if (this.route != null) {
+            throw new IllegalStateException(
+                    "Shipment is already assigned to a route"
+            );
+        }
+
+        this.route = route;
+    }
+
 }
