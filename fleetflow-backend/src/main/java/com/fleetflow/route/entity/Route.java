@@ -2,12 +2,8 @@ package com.fleetflow.route.entity;
 
 import com.fleetflow.common.entity.BaseEntity;
 import com.fleetflow.route.enums.RouteStatus;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
+import com.fleetflow.shipment.entity.Shipment;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -15,6 +11,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.time.OffsetDateTime;
 
 @Entity
 @Table(
@@ -23,6 +20,17 @@ import java.math.BigDecimal;
                 @UniqueConstraint(
                         name = "uk_routes_number",
                         columnNames = "route_number"
+                ),
+                @UniqueConstraint(
+                        name = "uk_routes_shipment",
+                        columnNames = "shipment_id"
+                )
+        },
+        indexes = {
+                @Index(name = "idx_routes_status", columnList = "status"),
+                @Index(
+                        name = "idx_routes_planned_departure",
+                        columnList = "planned_departure_at"
                 )
         }
 )
@@ -33,43 +41,36 @@ import java.math.BigDecimal;
 @Builder
 public class Route extends BaseEntity {
 
-    @Column(
-            name = "route_number",
-            nullable = false,
-            length = 50
-    )
+    @Column(name = "route_number", nullable = false, length = 50)
     private String routeNumber;
 
-    @Column(
-            name = "origin_address",
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(
+            name = "shipment_id",
             nullable = false,
-            columnDefinition = "TEXT"
+            foreignKey = @ForeignKey(name = "fk_routes_shipment")
     )
+    private Shipment shipment;
+
+    @Column(name = "origin_address", nullable = false, columnDefinition = "TEXT")
     private String originAddress;
 
-    @Column(
-            name = "destination_address",
-            nullable = false,
-            columnDefinition = "TEXT"
-    )
+    @Column(name = "destination_address", nullable = false, columnDefinition = "TEXT")
     private String destinationAddress;
 
-    @Column(
-            name = "distance_km",
-            precision = 12,
-            scale = 2
-    )
+    @Column(name = "distance_km", precision = 12, scale = 2)
     private BigDecimal distanceKm;
 
-    @Column(
-            name = "estimated_duration_minutes"
-    )
+    @Column(name = "estimated_duration_minutes")
     private Integer estimatedDurationMinutes;
 
+    @Column(name = "planned_departure_at")
+    private OffsetDateTime plannedDepartureAt;
+
+    @Column(name = "estimated_arrival_at")
+    private OffsetDateTime estimatedArrivalAt;
+
     @Enumerated(EnumType.STRING)
-    @Column(
-            nullable = false,
-            length = 30
-    )
+    @Column(nullable = false, length = 30)
     private RouteStatus status;
 }
