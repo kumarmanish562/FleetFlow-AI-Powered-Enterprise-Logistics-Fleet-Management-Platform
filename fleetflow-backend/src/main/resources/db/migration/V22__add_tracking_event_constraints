@@ -1,0 +1,7 @@
+ALTER TABLE tracking_events
+    ADD CONSTRAINT chk_tracking_events_latitude
+    CHECK (latitude IS NULL OR latitude BETWEEN -90 AND 90);
+
+ALTER TABLE tracking_events
+    ADD CONSTRAINT chk_tracking_events_longitude
+    CHECK (longitude IS NULL OR longitude BETWEEN -180 AND 180);
