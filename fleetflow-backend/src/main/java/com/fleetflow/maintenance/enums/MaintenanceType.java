@@ -1,7 +1,6 @@
 package com.fleetflow.maintenance.enums;
 
 public enum MaintenanceType {
-
     SERVICE,
     REPAIR,
     INSPECTION,
