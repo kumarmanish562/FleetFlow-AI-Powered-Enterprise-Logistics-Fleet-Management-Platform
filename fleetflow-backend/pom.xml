@@ -57,6 +57,11 @@
             <artifactId>spring-boot-starter-flyway</artifactId>
         </dependency>
 
+        <dependency>
+    <groupId>org.springframework.kafka</groupId>
+    <artifactId>spring-kafka</artifactId>
+    </dependency>
+
         <!-- Flyway PostgreSQL Support -->
         <dependency>
             <groupId>org.flywaydb</groupId>
@@ -108,6 +113,7 @@
             <version>0.13.0</version>
             <scope>runtime</scope>
         </dependency>
+
 
         <!-- JWT Jackson Integration -->
         <dependency>

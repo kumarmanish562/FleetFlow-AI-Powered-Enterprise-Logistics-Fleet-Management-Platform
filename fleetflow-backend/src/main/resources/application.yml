@@ -1,5 +1,4 @@
 spring:
-
   application:
     name: fleetflow-backend
 
@@ -21,10 +20,8 @@ spring:
 
   jpa:
     open-in-view: false
-
     hibernate:
       ddl-auto: validate
-
     properties:
       hibernate:
         format_sql: false
@@ -40,6 +37,27 @@ spring:
   jackson:
     time-zone: UTC
 
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9094}
+
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+      properties:
+        enable.idempotence: true
+        max.in.flight.requests.per.connection: 5
+        delivery.timeout.ms: 120000
+
+    consumer:
+      group-id: ${KAFKA_CONSUMER_GROUP:fleetflow-consumers}
+      enable-auto-commit: false
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
+    listener:
+      ack-mode: record
 
 fleetflow:
   security:
@@ -48,6 +66,17 @@ fleetflow:
       access-token-expiration: ${JWT_ACCESS_EXPIRATION:900000}
       refresh-token-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
 
-
   tracking:
     future-tolerance-seconds: 30
+
+  messaging:
+    topics:
+      shipment-events: fleetflow.shipment.events.v1
+      vehicle-events: fleetflow.vehicle.events.v1
+      driver-events: fleetflow.driver.events.v1
+      shipment-notification-dlt: fleetflow.shipment.notifications.dlt.v1
+
+    outbox:
+      poll-delay-ms: 1000
+      batch-size: 50
+      max-attempts: 10
