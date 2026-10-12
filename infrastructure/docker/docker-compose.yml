@@ -29,3 +29,4 @@ services:
 
 volumes:
   fleetflow_postgres_data:
+
