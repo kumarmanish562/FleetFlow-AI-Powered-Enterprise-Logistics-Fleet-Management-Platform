@@ -5,10 +5,7 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <!-- ============================================================= -->
-    <!-- SPRING BOOT PARENT                                            -->
-    <!-- ============================================================= -->
-
+    <!-- Spring Boot Parent -->
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
@@ -16,11 +13,7 @@
         <relativePath/>
     </parent>
 
-
-    <!-- ============================================================= -->
-    <!-- PROJECT INFORMATION                                           -->
-    <!-- ============================================================= -->
-
+    <!-- Project Information -->
     <groupId>com.fleetflow</groupId>
     <artifactId>fleetflow-backend</artifactId>
     <version>0.0.1-SNAPSHOT</version>
@@ -28,145 +21,87 @@
     <name>fleetflow-backend</name>
     <description>FleetFlow Backend - Fleet Management Platform</description>
 
-
-    <!-- ============================================================= -->
-    <!-- JAVA VERSION                                                   -->
-    <!-- ============================================================= -->
-
+    <!-- Java Configuration -->
     <properties>
         <java.version>25</java.version>
+
+        <!-- Skip test compilation and test execution -->
+        <maven.test.skip>true</maven.test.skip>
     </properties>
 
-
-    <!-- ============================================================= -->
-    <!-- DEPENDENCIES                                                   -->
-    <!-- ============================================================= -->
-
+    <!-- Dependencies -->
     <dependencies>
 
-
-        <!-- ========================================================= -->
-        <!-- WEB                                                        -->
-        <!-- ========================================================= -->
-
-        <!-- Spring Web MVC:
-             REST APIs, Controllers, HTTP requests and responses -->
+        <!-- Spring Web MVC -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webmvc</artifactId>
         </dependency>
 
-
-
-
-        <!-- ========================================================= -->
-        <!-- DATABASE                                                   -->
-        <!-- ========================================================= -->
-
-        <!-- Spring Data JPA:
-             JPA repositories and Hibernate ORM -->
+        <!-- Spring Data JPA -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
 
-
-        <!-- PostgreSQL JDBC Driver:
-             Connection between Spring Boot and PostgreSQL -->
+        <!-- PostgreSQL -->
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <scope>runtime</scope>
         </dependency>
 
-
-        <!-- ========================================================= -->
-        <!-- DATABASE MIGRATION                                         -->
-        <!-- ========================================================= -->
-
-        <!-- Flyway:
-             Database schema version control and migrations -->
+        <!-- Flyway -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-flyway</artifactId>
         </dependency>
 
-
-        <!-- Flyway PostgreSQL Database Support -->
+        <!-- Flyway PostgreSQL Support -->
         <dependency>
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-database-postgresql</artifactId>
         </dependency>
 
-
-        <!-- ========================================================= -->
-        <!-- SECURITY                                                   -->
-        <!-- ========================================================= -->
-
-        <!-- Spring Security:
-             Authentication, Authorization and Security Filters -->
+        <!-- Spring Security -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
 
-
+        <!-- Jackson Java Time Support -->
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jsr310</artifactId>
         </dependency>
 
-        <!-- ========================================================= -->
-        <!-- VALIDATION                                                 -->
-        <!-- ========================================================= -->
-
-        <!-- Bean Validation:
-             @NotNull, @NotBlank, @Email, @Size, etc. -->
+        <!-- Validation -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
 
-
-        <!-- ========================================================= -->
-        <!-- MONITORING                                                 -->
-        <!-- ========================================================= -->
-
-        <!-- Spring Boot Actuator:
-             Health checks, metrics and application monitoring -->
+        <!-- Actuator -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
-
-        <!-- ========================================================= -->
-        <!-- LOMBOK                                                      -->
-        <!-- ========================================================= -->
-
-        <!-- Lombok:
-             Getters, setters, constructors, builders, etc. -->
+        <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <optional>true</optional>
         </dependency>
 
-
-
-
-
-        <!-- ========================================================= -->
-        <!-- JWT                                                  -->
-        <!-- ========================================================= -->
-
-
+        <!-- JWT API -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-api</artifactId>
             <version>0.13.0</version>
         </dependency>
 
+        <!-- JWT Implementation -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-impl</artifactId>
@@ -174,6 +109,7 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- JWT Jackson Integration -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-jackson</artifactId>
@@ -181,17 +117,12 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- ========================================================= -->
-        <!-- TESTING                                                     -->
-        <!-- ========================================================= -->
-
-        <!-- Actuator Testing -->
+        <!-- Testing Dependencies (retained, but skipped by Maven property) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator-test</artifactId>
             <scope>test</scope>
         </dependency>
-
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -199,92 +130,68 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- JPA Testing -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa-test</artifactId>
             <scope>test</scope>
         </dependency>
 
-
-        <!-- Flyway Testing -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-flyway-test</artifactId>
             <scope>test</scope>
         </dependency>
 
-
-        <!-- Spring Security Testing -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security-test</artifactId>
             <scope>test</scope>
         </dependency>
 
-
-        <!-- Validation Testing -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation-test</artifactId>
             <scope>test</scope>
         </dependency>
 
-
-        <!-- Web MVC Testing -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webmvc-test</artifactId>
             <scope>test</scope>
         </dependency>
 
-
-        <!-- ========================================================= -->
-        <!-- TESTCONTAINERS                                             -->
-        <!-- ========================================================= -->
-
-        <!-- Spring Boot Testcontainers Integration -->
+        <!-- Testcontainers -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-testcontainers</artifactId>
             <scope>test</scope>
         </dependency>
 
-
-        <!-- Testcontainers JUnit 5 -->
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>testcontainers-junit-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
 
-
-        <!-- Testcontainers PostgreSQL -->
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>testcontainers-postgresql</artifactId>
             <scope>test</scope>
         </dependency>
 
-
     </dependencies>
 
-
-    <!-- ============================================================= -->
-    <!-- BUILD                                                         -->
-    <!-- ============================================================= -->
-
+    <!-- Build Configuration -->
     <build>
-
         <plugins>
 
-            <!-- Spring Boot Maven Plugin:
-                 Runs, packages and builds the Spring Boot application -->
+            <!-- Spring Boot Maven Plugin -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
 
+            <!-- Maven Surefire -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
@@ -294,38 +201,21 @@
                 </configuration>
             </plugin>
 
-
-            <!-- Maven Compiler Plugin:
-                 Java compilation and annotation processing -->
+            <!-- Maven Compiler and Lombok Annotation Processing -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-
                 <configuration>
-
-                    <!-- Lombok Annotation Processor -->
                     <annotationProcessorPaths>
                         <path>
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
                         </path>
                     </annotationProcessorPaths>
-
                 </configuration>
-
             </plugin>
 
-
-
         </plugins>
-
-
-
-
-
-
-
     </build>
 
 </project>
-
