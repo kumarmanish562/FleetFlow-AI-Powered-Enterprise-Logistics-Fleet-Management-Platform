@@ -1,10 +1,11 @@
+
 package com.fleetflow.config;
 
 import com.fleetflow.security.CustomUserDetailsService;
 import com.fleetflow.security.JwtAccessDeniedHandler;
 import com.fleetflow.security.JwtAuthenticationEntryPoint;
 import com.fleetflow.security.JwtAuthenticationFilter;
-import lombok.RequiredArgsConstructor;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -21,61 +22,46 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 @EnableMethodSecurity
-@RequiredArgsConstructor
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
-
     private final CustomUserDetailsService userDetailsService;
-
     private final JwtAuthenticationEntryPoint authenticationEntryPoint;
-
     private final JwtAccessDeniedHandler accessDeniedHandler;
 
-    // ============================================================
-    // PASSWORD ENCODER
-    // ============================================================
+    public SecurityConfig(
+            JwtAuthenticationFilter jwtAuthenticationFilter,
+            CustomUserDetailsService userDetailsService,
+            JwtAuthenticationEntryPoint authenticationEntryPoint,
+            JwtAccessDeniedHandler accessDeniedHandler
+    ) {
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.userDetailsService = userDetailsService;
+        this.authenticationEntryPoint = authenticationEntryPoint;
+        this.accessDeniedHandler = accessDeniedHandler;
+    }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-
-
-    // ============================================================
-    // AUTHENTICATION PROVIDER
-    // ============================================================
-
     @Bean
     public AuthenticationProvider authenticationProvider() {
-
         DaoAuthenticationProvider provider =
-                new DaoAuthenticationProvider(
-                        userDetailsService
-                );
+                new DaoAuthenticationProvider(userDetailsService);
 
-        provider.setPasswordEncoder(
-                passwordEncoder()
-        );
+        provider.setPasswordEncoder(passwordEncoder());
 
         return provider;
     }
-    // ============================================================
-    // AUTHENTICATION MANAGER
-    // ============================================================
 
     @Bean
     public AuthenticationManager authenticationManager(
             AuthenticationConfiguration configuration
     ) throws Exception {
-
         return configuration.getAuthenticationManager();
     }
-
-    // ============================================================
-    // SECURITY FILTER CHAIN
-    // ============================================================
 
     @Bean
     public SecurityFilterChain securityFilterChain(
@@ -83,78 +69,40 @@ public class SecurityConfig {
     ) throws Exception {
 
         http
+                .csrf(csrf -> csrf.disable())
 
-                // ------------------------------------------------
-                // CSRF
-                // ------------------------------------------------
-                .csrf(csrf ->
-                        csrf.disable()
-                )
-
-                // ------------------------------------------------
-                // STATELESS SESSION
-                // ------------------------------------------------
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(
                                 SessionCreationPolicy.STATELESS
                         )
                 )
 
-                // ------------------------------------------------
-                // EXCEPTION HANDLING
-                // ------------------------------------------------
-                .exceptionHandling(exception ->
-                        exception
-                                .authenticationEntryPoint(
-                                        authenticationEntryPoint
-                                )
-                                .accessDeniedHandler(
-                                        accessDeniedHandler
-                                )
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint(authenticationEntryPoint)
+                        .accessDeniedHandler(accessDeniedHandler)
                 )
 
-                // ------------------------------------------------
-                // AUTHORIZATION
-                // ------------------------------------------------
-                .authorizeHttpRequests(auth ->
-                        auth
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(
+                                "/api/v1/auth/register",
+                                "/api/v1/auth/login",
+                                "/api/v1/auth/refresh"
+                        ).permitAll()
 
-                                // Public authentication endpoints
-                                .requestMatchers(
-                                        "/api/v1/auth/register",
-                                        "/api/v1/auth/login",
-                                        "/api/v1/auth/refresh"
-                                )
-                                .permitAll()
+                        .requestMatchers(
+                                "/actuator/health",
+                                "/actuator/health/**"
+                        ).permitAll()
 
-                                // Public health endpoints
-                                .requestMatchers(
-                                        "/actuator/health",
-                                        "/actuator/health/**"
-                                )
-                                .permitAll()
+                        .requestMatchers(
+                                "/api/v1/system/**"
+                        ).permitAll()
 
-                                // Public system endpoints
-                                .requestMatchers(
-                                        "/api/v1/system/**"
-                                )
-                                .permitAll()
-
-                                // Everything else requires authentication
-                                .anyRequest()
-                                .authenticated()
+                        .anyRequest().authenticated()
                 )
 
-                // ------------------------------------------------
-                // AUTHENTICATION PROVIDER
-                // ------------------------------------------------
-                .authenticationProvider(
-                        authenticationProvider()
-                )
+                .authenticationProvider(authenticationProvider())
 
-                // ------------------------------------------------
-                // JWT FILTER
-                // ------------------------------------------------
                 .addFilterBefore(
                         jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class

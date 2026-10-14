@@ -1,9 +1,7 @@
-package com.fleetflow.payment.enums;
+package com.fleetflow.billing.enums;
 
 public enum PaymentStatus {
-
     PENDING,
-    PROCESSING,
     SUCCESS,
     FAILED,
     REFUNDED
