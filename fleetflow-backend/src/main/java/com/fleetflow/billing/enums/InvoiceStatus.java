@@ -1,7 +1,6 @@
-package com.fleetflow.invoice.enums;
+package com.fleetflow.billing.enums;
 
 public enum InvoiceStatus {
-
     DRAFT,
     ISSUED,
     PARTIALLY_PAID,

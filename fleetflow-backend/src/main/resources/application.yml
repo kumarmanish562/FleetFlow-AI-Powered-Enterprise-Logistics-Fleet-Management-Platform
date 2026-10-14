@@ -1,82 +1,97 @@
-spring:
-  application:
-    name: fleetflow-backend
 
-  profiles:
-    active: ${SPRING_PROFILES_ACTIVE:dev}
+  spring:
+    application:
+      name: fleetflow-backend
 
-  datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5433/fleetflow}
-    username: ${DB_USERNAME:fleetflow}
-    password: ${DB_PASSWORD}
-    driver-class-name: org.postgresql.Driver
+    profiles:
+      active: ${SPRING_PROFILES_ACTIVE:dev}
 
-    hikari:
-      maximum-pool-size: ${DB_POOL_MAX_SIZE:10}
-      minimum-idle: ${DB_POOL_MIN_IDLE:2}
-      connection-timeout: 30000
-      idle-timeout: 600000
-      max-lifetime: 1800000
+    datasource:
+      url: ${DB_URL:jdbc:postgresql://localhost:5433/fleetflow}
+      username: ${DB_USERNAME:fleetflow}
+      password: ${DB_PASSWORD}
+      driver-class-name: org.postgresql.Driver
 
-  jpa:
-    open-in-view: false
-    hibernate:
-      ddl-auto: validate
-    properties:
+      hikari:
+        maximum-pool-size: ${DB_POOL_MAX_SIZE:10}
+        minimum-idle: ${DB_POOL_MIN_IDLE:2}
+        connection-timeout: 30000
+        idle-timeout: 600000
+        max-lifetime: 1800000
+
+    jpa:
+      open-in-view: false
       hibernate:
-        format_sql: false
-        jdbc:
-          time_zone: UTC
-
-  flyway:
-    enabled: true
-    locations: classpath:db/migration
-    validate-on-migrate: true
-    clean-disabled: true
-
-  jackson:
-    time-zone: UTC
-
-  kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9094}
-
-    producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.apache.kafka.common.serialization.StringSerializer
-      acks: all
+        ddl-auto: validate
       properties:
-        enable.idempotence: true
-        max.in.flight.requests.per.connection: 5
-        delivery.timeout.ms: 120000
+        hibernate:
+          format_sql: false
+          jdbc:
+            time_zone: UTC
 
-    consumer:
-      group-id: ${KAFKA_CONSUMER_GROUP:fleetflow-consumers}
-      enable-auto-commit: false
-      auto-offset-reset: earliest
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    flyway:
+      enabled: true
+      locations: classpath:db/migration
+      validate-on-migrate: true
+      clean-disabled: true
 
-    listener:
-      ack-mode: record
+    jackson:
+      time-zone: UTC
 
-fleetflow:
-  security:
-    jwt:
-      secret: ${JWT_SECRET}
-      access-token-expiration: ${JWT_ACCESS_EXPIRATION:900000}
-      refresh-token-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
+    kafka:
+      bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9094}
 
-  tracking:
-    future-tolerance-seconds: 30
+      producer:
+        key-serializer: org.apache.kafka.common.serialization.StringSerializer
+        value-serializer: org.apache.kafka.common.serialization.StringSerializer
+        acks: all
+        properties:
+          enable.idempotence: true
+          max.in.flight.requests.per.connection: 5
+          delivery.timeout.ms: 120000
 
-  messaging:
-    topics:
-      shipment-events: fleetflow.shipment.events.v1
-      vehicle-events: fleetflow.vehicle.events.v1
-      driver-events: fleetflow.driver.events.v1
-      shipment-notification-dlt: fleetflow.shipment.notifications.dlt.v1
+      consumer:
+        group-id: ${KAFKA_CONSUMER_GROUP:fleetflow-consumers}
+        enable-auto-commit: false
+        auto-offset-reset: earliest
+        key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+        value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
 
-    outbox:
-      poll-delay-ms: 1000
-      batch-size: 50
-      max-attempts: 10
+      listener:
+        ack-mode: record
+
+  fleetflow:
+    security:
+      jwt:
+        secret: ${JWT_SECRET}
+        access-token-expiration: ${JWT_ACCESS_EXPIRATION:900000}
+        refresh-token-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
+
+    tracking:
+      future-tolerance-seconds: 30
+
+    billing:
+      currency: INR
+
+      base-price: 100.00
+      price-per-kg: 10.00
+      price-per-km: 5.00
+
+      tax-percent: 18.00
+      fuel-surcharge-percent: 5.00
+      express-surcharge: 100.00
+      urgent-surcharge: 200.00
+      discount-percent: 5.00
+
+    messaging:
+      topics:
+        shipment-events: fleetflow.shipment.events.v1
+        vehicle-events: fleetflow.vehicle.events.v1
+        driver-events: fleetflow.driver.events.v1
+        shipment-notification-dlt: fleetflow.shipment.notifications.dlt.v1
+
+      outbox:
+        poll-delay-ms: 1000
+        batch-size: 50
+        max-attempts: 10
+
