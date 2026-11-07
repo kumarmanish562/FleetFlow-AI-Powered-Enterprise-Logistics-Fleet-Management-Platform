@@ -1,4 +1,11 @@
+
 package com.fleetflow.notification.recipient;
 
-public class NotificationRecipient {
+import java.util.UUID;
+
+public record NotificationRecipient(
+        UUID userId,
+        String email,
+        String phoneNumber
+) {
 }

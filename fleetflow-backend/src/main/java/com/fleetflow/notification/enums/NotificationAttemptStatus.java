@@ -1,4 +1,9 @@
+
 package com.fleetflow.notification.enums;
 
-public class NotificationAttemptStatus {
+public enum NotificationAttemptStatus {
+    STARTED,
+    SUCCEEDED,
+    RETRYABLE_FAILURE,
+    PERMANENT_FAILURE
 }

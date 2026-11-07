@@ -1,10 +1,13 @@
 package com.fleetflow.notification.enums;
 
 public enum NotificationType {
-
     SHIPMENT_CREATED,
+    SHIPMENT_PICKED_UP,
+    SHIPMENT_DELAYED,
+    SHIPMENT_DELIVERED,
     SHIPMENT_STATUS_CHANGED,
     DELIVERY_UPDATE,
+    INVOICE_GENERATED,
     PAYMENT_RECEIVED,
     MAINTENANCE_REMINDER,
     SYSTEM

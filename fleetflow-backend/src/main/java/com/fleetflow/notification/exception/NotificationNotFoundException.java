@@ -1,4 +1,9 @@
+
 package com.fleetflow.notification.exception;
 
-public class NotificationNotFoundException {
+public class NotificationNotFoundException extends RuntimeException {
+
+    public NotificationNotFoundException() {
+        super("Notification not found");
+    }
 }

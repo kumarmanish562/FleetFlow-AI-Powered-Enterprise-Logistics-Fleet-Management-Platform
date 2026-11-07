@@ -1,4 +1,11 @@
+
 package com.fleetflow.notification.messaging.event;
 
-public class InvoiceGeneratedEvent {
+import java.util.UUID;
+
+public record InvoiceGeneratedEvent(
+        UUID invoiceId,
+        UUID customerId,
+        String invoiceNumber
+) {
 }

@@ -6,6 +6,7 @@
     profiles:
       active: ${SPRING_PROFILES_ACTIVE:dev}
 
+    # PostgreSQL Database Configuration
     datasource:
       url: ${DB_URL:jdbc:postgresql://localhost:5433/fleetflow}
       username: ${DB_USERNAME:fleetflow}
@@ -19,6 +20,7 @@
         idle-timeout: 600000
         max-lifetime: 1800000
 
+    # JPA / Hibernate Configuration
     jpa:
       open-in-view: false
       hibernate:
@@ -29,15 +31,18 @@
           jdbc:
             time_zone: UTC
 
+    # Flyway Database Migrations
     flyway:
       enabled: true
       locations: classpath:db/migration
       validate-on-migrate: true
       clean-disabled: true
 
+    # Jackson JSON Configuration
     jackson:
       time-zone: UTC
 
+    # Apache Kafka Configuration
     kafka:
       bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9094}
 
@@ -60,29 +65,45 @@
       listener:
         ack-mode: record
 
+    # Email / SMTP Configuration
+    mail:
+      host: ${MAIL_HOST}
+      port: ${MAIL_PORT:587}
+      username: ${MAIL_USERNAME}
+      password: ${MAIL_PASSWORD}
+      properties:
+        mail:
+          smtp:
+            auth: true
+            starttls:
+              enable: true
+
+  # FleetFlow Application Configuration
   fleetflow:
+    # JWT Authentication
     security:
       jwt:
         secret: ${JWT_SECRET}
         access-token-expiration: ${JWT_ACCESS_EXPIRATION:900000}
         refresh-token-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
 
+    # Shipment Tracking
     tracking:
       future-tolerance-seconds: 30
 
+    # Billing and Pricing
     billing:
       currency: INR
-
       base-price: 100.00
       price-per-kg: 10.00
       price-per-km: 5.00
-
       tax-percent: 18.00
       fuel-surcharge-percent: 5.00
       express-surcharge: 100.00
       urgent-surcharge: 200.00
       discount-percent: 5.00
 
+    # Kafka Topic Names
     messaging:
       topics:
         shipment-events: fleetflow.shipment.events.v1
@@ -90,8 +111,8 @@
         driver-events: fleetflow.driver.events.v1
         shipment-notification-dlt: fleetflow.shipment.notifications.dlt.v1
 
+      # Transactional Outbox Configuration
       outbox:
         poll-delay-ms: 1000
         batch-size: 50
         max-attempts: 10
-
