@@ -23,7 +23,7 @@ public class ShipmentDeliveredListener {
     }
 
     @KafkaListener(
-            topics = "${fleetflow.messaging.topics.shipment}",
+            topics = "${fleetflow.messaging.topics.shipment:fleetflow.shipment.events.v1}",
             groupId = "fleetflow-notifications"
     )
     public void onMessage(

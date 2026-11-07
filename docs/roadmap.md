@@ -251,15 +251,33 @@ Operational KPIs
 
 # Phase 13 — Event-Driven Architecture
 
+### Status
+
+Completed for the backend event foundation.
+
 ### Goal
 
-Introduce asynchronous processing.
+Publish shipment lifecycle events asynchronously through Kafka while keeping
+the shipment write and event record atomic through the transactional outbox.
 
 Potential technology:
 
 ```text
 Apache Kafka
 ```
+
+### Delivered
+
+- Versioned event envelopes with event and aggregate identifiers.
+- Transactional outbox with concurrent batch claims, retry backoff, and failed-event state.
+- Shipment-created, assigned, picked-up, and delivered events recorded with the shipment transaction.
+- Idempotent consumer processing and dead-letter handling for notification consumers.
+- Local Kafka broker in Docker Compose and configurable topic names.
+- Scheduled outbox polling enabled by the backend messaging configuration.
+
+The outbox is the source of truth for publication: a Kafka outage leaves events
+pending for retry without losing the committed shipment change. Consumers should
+remain idempotent because delivery is at least once.
 
 Example:
 

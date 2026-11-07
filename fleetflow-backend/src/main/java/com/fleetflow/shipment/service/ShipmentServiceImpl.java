@@ -93,7 +93,7 @@ public class ShipmentServiceImpl implements ShipmentService {
 
         Shipment savedShipment = shipmentRepository.save(shipment);
 
-        // PHASE 11: Record ShipmentCreated in the transactional outbox.
+        // Phase 13: commit the event record atomically with the shipment.
         outboxService.record(
                 outboxService.shipmentTopic(),
                 "ShipmentCreated",
@@ -224,7 +224,7 @@ public class ShipmentServiceImpl implements ShipmentService {
 
         shipment.assignTo(driver, vehicle);
 
-        // PHASE 11: Record ShipmentAssigned.
+        // Phase 13: commit the assignment event atomically with the shipment.
         outboxService.record(
                 outboxService.shipmentTopic(),
                 "ShipmentAssigned",
@@ -281,7 +281,7 @@ public class ShipmentServiceImpl implements ShipmentService {
 
             shipment.markPickedUp(pickedUpAt);
 
-            // PHASE 11: Record ShipmentPickedUp.
+            // Phase 13: commit the pickup event atomically with the shipment.
             outboxService.record(
                     outboxService.shipmentTopic(),
                     "ShipmentPickedUp",
@@ -300,7 +300,7 @@ public class ShipmentServiceImpl implements ShipmentService {
 
             shipment.markDelivered(deliveredAt);
 
-            // PHASE 11: Record ShipmentDelivered.
+            // Phase 13: commit the delivery event atomically with the shipment.
             outboxService.record(
                     outboxService.shipmentTopic(),
                     "ShipmentDelivered",

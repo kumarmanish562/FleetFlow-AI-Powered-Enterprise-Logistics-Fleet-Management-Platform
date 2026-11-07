@@ -250,14 +250,11 @@ docs/
 ## 🚧 Project Status
 
 ```text
-Phase 0 — Product Planning
-        ✅ Completed
+Phase 13 — Event-driven backend foundation
+           ✅ Completed
 
-Phase 1 — Product Foundation
-        🔄 Current
-
-Phase 2 — Backend Foundation
-        ⏳ Upcoming
+Analytics and React frontend
+                           ⏳ Planned
 ```
 
 ---
