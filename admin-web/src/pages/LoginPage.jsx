@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../auth/AuthProvider.jsx';
+import { useAuth } from '../auth/AuthProvider.tsx';
 import { apiMessage } from '../api/client.js';
 import { ArrowRight, Truck } from 'lucide-react';
 
@@ -15,7 +15,18 @@ export function LoginPage() {
   const [serverError, setServerError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const { register, handleSubmit, formState: { errors } } = useForm({ resolver: zodResolver(schema), defaultValues: { email: '', password: '' } });
-  if (user) return <Navigate to="/" replace />;
+  if (user) {
+    const roles=user.roles||[];
+    const destination=location.state?.from||(
+      roles.some((role)=>['ADMIN','SUPER_ADMIN'].includes(role))?'/':
+      roles.includes('FINANCE_MANAGER')?'/analytics':
+      roles.includes('CUSTOMER')?'/billing':
+      roles.includes('DISPATCHER')?'/shipments':
+      roles.includes('FLEET_MANAGER')?'/fleet':
+      roles.includes('DRIVER')?'/fleet':'/notifications'
+    );
+    return <Navigate to={destination} replace />;
+  }
   const submit = async (values) => {
     setServerError(''); setSubmitting(true);
     try { await login(values); }

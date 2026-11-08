@@ -1,21 +1,23 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Activity, ArrowUpRight, Box, CircleDollarSign, Truck, Users, Wrench } from 'lucide-react';
-import { analyticsApi, api } from '../api/client.js';
+import { analyticsApi } from '../api/client.js';
 import { PageHeader } from '../components/PageHeader.jsx';
 import { ErrorState, LoadingState } from '../components/States.jsx';
-import { useAuth } from '../auth/AuthProvider.jsx';
+import { useAuth } from '../auth/AuthProvider.tsx';
 
 const money = (items) => Array.isArray(items) ? items.map(({currency, amount}) => `${currency} ${Number(amount).toLocaleString(undefined,{maximumFractionDigits:0})}`).join(' · ') || '—' : '—';
 const ShipmentTrendChart = lazy(() => import('../components/ShipmentTrendChart.jsx'));
 
 export function DashboardPage() {
   const { user } = useAuth();
-  const query = useQuery({ queryKey: ['analytics','dashboard'], queryFn: analyticsApi.dashboard });
-  const charts = useQuery({ queryKey: ['analytics','shipment-trends'], queryFn: () => api.get('/analytics/shipments/trends').then((r) => r.data), enabled: Boolean(query.data) });
+  const [range,setRange]=useState(()=>{const to=new Date();const from=new Date();from.setDate(to.getDate()-29);return {from:from.toISOString().slice(0,10),to:to.toISOString().slice(0,10)}});
+  const query = useQuery({ queryKey: ['analytics','dashboard',range], queryFn: () => analyticsApi.dashboard(range) });
+  const charts = useQuery({ queryKey: ['analytics','shipment-trends',range], queryFn: () => analyticsApi.shipmentTrends(range), enabled: Boolean(query.data) });
   const data = query.data;
   return <>
     <PageHeader eyebrow="FLEET OPERATIONS / OVERVIEW" title={`Good day, ${user?.firstName || 'there'}`} description="A live view of your fleet performance and operations." />
+    <div className="dashboard-range"><label>From <input type="date" value={range.from} max={range.to} onChange={(e)=>setRange((current)=>({...current,from:e.target.value}))}/></label><label>To <input type="date" value={range.to} min={range.from} onChange={(e)=>setRange((current)=>({...current,to:e.target.value}))}/></label></div>
     <div className="dashboard-meta"><span><i className="live-dot"/> Live operational data</span><span>Updated {query.dataUpdatedAt ? new Date(query.dataUpdatedAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '—'}</span></div>
     {query.isLoading && <LoadingState label="Loading dashboard metrics"/>}
     {query.isError && <ErrorState error={query.error} retry={() => query.refetch()}/>}
