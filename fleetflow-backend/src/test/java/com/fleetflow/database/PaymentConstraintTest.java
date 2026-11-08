@@ -1,17 +1,15 @@
 package com.fleetflow.database;
 
-import com.fleetflow.payment.entity.Payment;
-import com.fleetflow.payment.enums.PaymentMethod;
-import com.fleetflow.payment.enums.PaymentStatus;
-import com.fleetflow.payment.repository.PaymentRepository;
 import com.fleetflow.support.PostgresContainerTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.annotation.DirtiesContext;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -20,21 +18,16 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class PaymentConstraintTest extends PostgresContainerTest {
 
     @Autowired
-    private PaymentRepository paymentRepository;
+    private JdbcTemplate jdbc;
 
     @Test
     void shouldRejectPaymentWithoutInvoice() {
-
-        Payment payment = Payment.builder()
-                .paymentReference("PAY-CONSTRAINT-001")
-                .amount(new BigDecimal("1000.00"))
-                .paymentMethod(PaymentMethod.CASH)
-                .status(PaymentStatus.SUCCESS)
-                .build();
-
-        assertThatThrownBy(() ->
-                paymentRepository.saveAndFlush(payment)
-        )
+        assertThatThrownBy(() -> jdbc.update("""
+                INSERT INTO billing_payments
+                    (id, invoice_id, customer_id, amount, currency, method, status,
+                     provider, idempotency_key, created_at, version)
+                VALUES (?, NULL, 1, ?, 'INR', 'UPI', 'PENDING', 'test', 'constraint-test', now(), 0)
+                """, UUID.randomUUID(), new BigDecimal("1000.00")))
                 .isInstanceOf(DataIntegrityViolationException.class);
     }
 }

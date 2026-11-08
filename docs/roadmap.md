@@ -202,54 +202,7 @@ Vehicle Downtime
 
 ---
 
-# Phase 10 — Billing & Finance
-
-### Features
-
-```text
-Pricing
-Invoice Generation
-Invoice Management
-Payment Records
-Outstanding Balance
-Financial Reports
-```
-
----
-
-# Phase 11 — Notifications
-
-### Features
-
-```text
-In-App Notifications
-Email Notifications
-Shipment Alerts
-Maintenance Alerts
-Billing Notifications
-Incident Alerts
-```
-
-Future integrations may include SMS or messaging providers.
-
----
-
-# Phase 12 — Analytics
-
-### Features
-
-```text
-Fleet Dashboard
-Shipment Dashboard
-Driver Analytics
-Maintenance Analytics
-Financial Analytics
-Operational KPIs
-```
-
----
-
-# Phase 13 — Event-Driven Architecture
+# Phase 11 — Event-Driven Architecture
 
 ### Status
 
@@ -294,7 +247,58 @@ Billing Analytics Notification
 
 ---
 
-# Phase 14 — React Frontend
+# Phase 12 — Billing & Finance
+
+### Features
+
+```text
+Pricing
+Invoice Generation
+Invoice Management
+Payment Records
+Outstanding Balance
+Financial Reports
+```
+
+---
+
+# Phase 13 — Notifications
+
+### Features
+
+```text
+In-App Notifications
+Email Notifications
+Shipment Alerts
+Maintenance Alerts
+Billing Notifications
+Incident Alerts
+```
+
+Future integrations may include SMS or messaging providers.
+
+---
+
+# Phase 14 — Analytics & Reporting
+
+The production analytics scope and calculation rules are documented in
+[`analytics.md`](analytics.md). This phase follows billing and notifications
+as listed above and uses PostgreSQL as the reporting source of truth.
+
+### Features
+
+```text
+Fleet Dashboard
+Shipment Dashboard
+Driver Analytics
+Maintenance Analytics
+Financial Analytics
+Operational KPIs
+```
+
+---
+
+# Phase 15 — React Frontend
 
 ### Goal
 
@@ -318,7 +322,7 @@ Analytics UI
 
 ---
 
-# Phase 15 — AI Intelligence
+# Phase 16 — AI Intelligence
 
 ### Goal
 
@@ -348,7 +352,7 @@ Report Generation
 
 ---
 
-# Phase 16 — AI RAG
+# Phase 17 — AI RAG
 
 ### Goal
 
@@ -385,7 +389,7 @@ Internal Documentation
 
 ---
 
-# Phase 17 — DevOps & Cloud
+# Phase 18 — DevOps & Cloud
 
 ### Goal
 
@@ -419,7 +423,7 @@ Secrets Manager
 
 ---
 
-# Phase 18 — Production Hardening
+# Phase 19 — Production Hardening
 
 ### Focus
 
@@ -436,7 +440,7 @@ Secrets Manager
 
 ---
 
-# Phase 19 — Final Enterprise Release
+# Phase 20 — Final Enterprise Release
 
 FleetFlow should eventually provide:
 
@@ -490,33 +494,33 @@ Tracking + Incidents
 Phase 9
 Maintenance
       ↓
-Phase 10
-Billing
-      ↓
 Phase 11
-Notifications
-      ↓
-Phase 12
-Analytics
-      ↓
-Phase 13
 Kafka / Events
       ↓
+Phase 12
+Billing
+      ↓
+Phase 13
+Notifications
+      ↓
 Phase 14
-React Frontend
+Analytics
       ↓
 Phase 15
-Spring AI
+React Frontend
       ↓
 Phase 16
-RAG
+Spring AI
       ↓
 Phase 17
-DevOps / AWS
+RAG
       ↓
 Phase 18
-Production Hardening
+DevOps / AWS
       ↓
 Phase 19
+Production Hardening
+      ↓
+Phase 20
 Enterprise Release
 ```
