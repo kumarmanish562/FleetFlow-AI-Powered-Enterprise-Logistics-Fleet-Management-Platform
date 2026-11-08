@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { AuthProvider } from '../auth/AuthProvider.jsx';
+import { AuthProvider } from '../auth/AuthProvider.tsx';
 import { LoginPage } from './LoginPage.jsx';
 
 vi.mock('../api/client.js', async (importOriginal) => ({ ...(await importOriginal()), authApi: { login: vi.fn().mockResolvedValue({ accessToken:'test', refreshToken:'refresh' }), me: vi.fn().mockResolvedValue({ email:'admin@example.test', roles:['ADMIN'] }) } }));

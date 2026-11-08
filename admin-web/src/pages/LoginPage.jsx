@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../auth/AuthProvider.jsx';
+import { useAuth } from '../auth/AuthProvider.tsx';
 import { apiMessage } from '../api/client.js';
 import { ArrowRight, Truck } from 'lucide-react';
 

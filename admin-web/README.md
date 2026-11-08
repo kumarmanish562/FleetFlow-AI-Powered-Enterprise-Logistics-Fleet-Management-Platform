@@ -1,13 +1,26 @@
 # FleetFlow Admin Web
 
-React and Vite admin interface for the existing FleetFlow Spring Boot API. This frontend uses the backend's actual route and DTO contracts and does not include a mock data layer.
+React and Vite operations interface for the existing FleetFlow Spring Boot API. The application entry, router, authentication provider, theme provider, and shell are TypeScript; feature pages remain JavaScript during the incremental migration. API data uses the backend's actual contracts with no mock production data.
 
 ## Run locally
 
 1. Copy `.env.example` to `.env` and set `VITE_API_BASE_URL` to the backend API base URL (default: `http://localhost:8080/api/v1`).
 2. Start the Spring Boot backend and configure its CORS allowlist for the frontend origin.
 3. Run `npm install`, then `npm run dev`.
-4. Run `npm test` and `npm run build` before shipping.
+4. Run `npm run typecheck`, `npm test`, and `npm run build` before shipping. The build includes the TypeScript check.
+
+## Frontend implementation
+
+- Typed React/Vite entry point, route protection, auth context, and theme context.
+- Responsive mobile drawer and collapsible desktop sidebar.
+- Header page search that navigates only to modules available to the signed-in role.
+- Profile menu with account settings and sign-out; light/dark theme preference persists in the browser.
+- Shared TanStack Query client and the existing centralized Axios/JWT refresh integration.
+- Theme, navigation, sidebar, login, and authentication basics covered by the current Vitest suite.
+- Responsive dashboard and role scoped analytics views, operational CRUD pages, supported shipment/vehicle/driver/customer state changes, notification preferences, and maintenance workflows.
+- Shipment tracking polls the selected shipment's latest event and maps its coordinates when present. `VITE_MAP_TILE_URL` can override the OpenStreetMap tile URL; no coordinates are invented.
+- Invoice creation and lookup are available to administrators; customers can initiate a payment against a known invoice. Invoice and payment registers are not exposed by the backend.
+- AI assistant is represented as an explicit backend dependency because no assistant endpoint exists yet.
 
 ## Authentication
 
@@ -33,7 +46,7 @@ The backend currently returns access and refresh tokens in the JSON response to 
 - Tracking is exposed per shipment, not as an all-active-shipments location feed. The tracking page selects one shipment and polls its latest event.
 - Route and shipment list APIs expose pagination and supported filters, but not every filter/action in the Phase 15 brief. The UI does not offer unsupported status transitions.
 - Driver creation requires an existing user ID. User provisioning and administrative role operations need backend support.
-- This frontend does not implement a map provider because the backend has no fleet location feed, route geometry, or provider configuration. Coordinates are displayed only when returned by tracking events.
+- The tracking map displays only coordinates returned by the selected shipment's tracking event. There is no fleet location feed or route geometry, so the map is not a fleet-wide live map.
 - Backend CORS configuration must allow the chosen frontend development and deployment origins.
 
 See [`docs/PHASE_15_BACKEND_DEPENDENCIES.md`](../docs/PHASE_15_BACKEND_DEPENDENCIES.md) for the contract-by-contract dependency register, including protected role mismatches and missing route, tracking, billing, and admin operations.

@@ -1,10 +1,37 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { authApi, readSession, writeSession } from '../api/client.js';
 
-const AuthContext = createContext(null);
+export type UserProfile = {
+  id?: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  status?: string;
+  roles: string[];
+};
 
-export function AuthProvider({ children }) {
-  const [session, setSession] = useState(readSession);
+export type AuthSession = {
+  accessToken: string;
+  refreshToken: string;
+  tokenType?: string;
+  expiresIn?: number;
+  user?: UserProfile;
+};
+
+type Credentials = { email: string; password: string };
+type AuthContextValue = {
+  session: AuthSession | null;
+  user: UserProfile | undefined;
+  loading: boolean;
+  login: (credentials: Credentials) => Promise<void>;
+  logout: () => Promise<void>;
+};
+
+const AuthContext = createContext<AuthContextValue | null>(null);
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [session, setSession] = useState<AuthSession | null>(() => readSession() as AuthSession | null);
   const [loading, setLoading] = useState(Boolean(readSession()?.accessToken));
 
   useEffect(() => {
@@ -16,9 +43,9 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     if (!session?.accessToken) { setLoading(false); return; }
     let alive = true;
-    authApi.me().then((user) => {
+    authApi.me().then((user: UserProfile) => {
       if (!alive) return;
-      const next = { ...readSession(), user };
+      const next = { ...readSession(), user } as AuthSession;
       writeSession(next); setSession(next);
     }).catch(() => {
       if (alive && !readSession()?.refreshToken) { writeSession(null); setSession(null); }
@@ -26,12 +53,12 @@ export function AuthProvider({ children }) {
     return () => { alive = false; };
   }, []);
 
-  const login = useCallback(async (credentials) => {
-    const tokens = await authApi.login(credentials);
-    const next = { ...tokens };
+  const login = useCallback(async (credentials: Credentials) => {
+    const tokens = await authApi.login(credentials) as Omit<AuthSession, 'user'>;
+    const next = { ...tokens } as AuthSession;
     writeSession(next);
     try {
-      const user = await authApi.me();
+      const user = await authApi.me() as UserProfile;
       const authenticated = { ...next, user };
       writeSession(authenticated); setSession(authenticated);
     } catch (error) {

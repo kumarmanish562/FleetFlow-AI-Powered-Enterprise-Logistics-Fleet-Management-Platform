@@ -4,7 +4,7 @@ import { Activity, ArrowUpRight, Box, CircleDollarSign, Truck, Users, Wrench } f
 import { analyticsApi } from '../api/client.js';
 import { PageHeader } from '../components/PageHeader.jsx';
 import { ErrorState, LoadingState } from '../components/States.jsx';
-import { useAuth } from '../auth/AuthProvider.jsx';
+import { useAuth } from '../auth/AuthProvider.tsx';
 
 const money = (items) => Array.isArray(items) ? items.map(({currency, amount}) => `${currency} ${Number(amount).toLocaleString(undefined,{maximumFractionDigits:0})}`).join(' · ') || '—' : '—';
 const ShipmentTrendChart = lazy(() => import('../components/ShipmentTrendChart.jsx'));
