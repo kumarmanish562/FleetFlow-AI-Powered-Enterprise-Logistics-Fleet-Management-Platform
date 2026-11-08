@@ -208,16 +208,16 @@ Phase 6  → Shipments
 Phase 7  → Dispatch + Routes
 Phase 8  → Tracking + Incidents
 Phase 9  → Maintenance
-Phase 10 → Billing
-Phase 11 → Notifications
-Phase 12 → Analytics
-Phase 13 → Kafka / Event Architecture
-Phase 14 → React Frontend
-Phase 15 → Spring AI
-Phase 16 → RAG
-Phase 17 → DevOps / AWS
-Phase 18 → Production Hardening
-Phase 19 → Enterprise Release
+Phase 11 → Kafka / Event Architecture
+Phase 12 → Billing
+Phase 13 → Notifications
+Phase 14 → Analytics & Reporting
+Phase 15 → React Frontend
+Phase 16 → Spring AI
+Phase 17 → RAG
+Phase 18 → DevOps / AWS
+Phase 19 → Production Hardening
+Phase 20 → Enterprise Release
 ```
 
 ---
@@ -244,17 +244,21 @@ docs/
 ### Planning
 
 - `roadmap.md`
+- `analytics.md`
 
 ---
 
 ## 🚧 Project Status
 
 ```text
-Phase 13 — Event-driven backend foundation
+Phase 13 — Notifications
            ✅ Completed
 
-Analytics and React frontend
-                           ⏳ Planned
+Phase 14 — Analytics & Reporting backend
+           🟡 Core implementation in progress; PostgreSQL integration verification pending
+
+Phase 15 — React Frontend
+           ⏳ Upcoming
 ```
 
 ---

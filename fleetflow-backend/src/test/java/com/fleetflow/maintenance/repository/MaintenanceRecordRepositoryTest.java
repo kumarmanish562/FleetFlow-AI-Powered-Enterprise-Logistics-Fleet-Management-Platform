@@ -70,13 +70,14 @@ class MaintenanceRecordRepositoryTest extends PostgresContainerTest {
     @Test
     void shouldFindMaintenanceHistory() {
 
-        MaintenanceRecord record = MaintenanceRecord.builder()
-                .vehicle(vehicle)
-                .maintenanceType(MaintenanceType.SERVICE)
-                .maintenanceDate(LocalDate.now())
-                .cost(new BigDecimal("5000"))
-                .status(MaintenanceStatus.COMPLETED)
-                .build();
+        MaintenanceRecord record = new MaintenanceRecord();
+        record.setVehicle(vehicle);
+        record.setMaintenanceType(MaintenanceType.SERVICE);
+        record.setDescription("Scheduled service test record");
+        record.setMaintenanceDate(LocalDate.now());
+        record.setMileage(1000L);
+        record.setCost(new BigDecimal("5000"));
+        record.setStatus(MaintenanceStatus.COMPLETED);
 
         maintenanceRecordRepository.saveAndFlush(record);
 

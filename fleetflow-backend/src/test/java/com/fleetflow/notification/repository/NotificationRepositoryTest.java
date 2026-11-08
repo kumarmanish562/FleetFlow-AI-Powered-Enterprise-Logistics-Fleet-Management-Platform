@@ -19,6 +19,8 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import java.util.UUID;
+import java.time.OffsetDateTime;
 
 @SpringBootTest
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
@@ -53,25 +55,15 @@ class NotificationRepositoryTest extends PostgresContainerTest {
     @Test
     void shouldFindUserNotificationsNewestFirst() {
 
-        Notification first =
-                Notification.builder()
-                        .user(user)
-                        .type(NotificationType.SHIPMENT_CREATED)
-                        .channel(NotificationChannel.IN_APP)
-                        .title("First Notification")
-                        .message("First notification message")
-                        .status(NotificationStatus.SENT)
-                        .build();
+        Notification first = new Notification(user, NotificationType.SHIPMENT_CREATED,
+                NotificationChannel.IN_APP, "First Notification", "First notification message",
+                UUID.randomUUID(), UUID.randomUUID().toString(), null, null);
+        first.markSent(OffsetDateTime.now());
 
-        Notification second =
-                Notification.builder()
-                        .user(user)
-                        .type(NotificationType.SHIPMENT_CREATED)
-                        .channel(NotificationChannel.IN_APP)
-                        .title("Second Notification")
-                        .message("Second notification message")
-                        .status(NotificationStatus.SENT)
-                        .build();
+        Notification second = new Notification(user, NotificationType.SHIPMENT_CREATED,
+                NotificationChannel.IN_APP, "Second Notification", "Second notification message",
+                UUID.randomUUID(), UUID.randomUUID().toString(), null, null);
+        second.markSent(OffsetDateTime.now());
 
         notificationRepository.saveAndFlush(first);
         notificationRepository.saveAndFlush(second);
@@ -79,7 +71,7 @@ class NotificationRepositoryTest extends PostgresContainerTest {
         Pageable pageable = PageRequest.of(0, 10);
 
         Page<Notification> result =
-                notificationRepository.findByUserIdOrderByCreatedAtDesc(
+                notificationRepository.findByUser_IdOrderByCreatedAtDesc(
                         user.getId(),
                         pageable
                 );
