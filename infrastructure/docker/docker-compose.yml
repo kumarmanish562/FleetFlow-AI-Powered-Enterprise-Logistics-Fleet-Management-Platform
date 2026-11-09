@@ -1,4 +1,14 @@
 services:
+  redis:
+    image: redis:8-alpine
+    container_name: fleetflow-redis
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - fleetflow_redis_data:/data
+
   postgres:
     image: pgvector/pgvector:pg18
     container_name: fleetflow-postgres
@@ -53,5 +63,6 @@ services:
       - fleetflow_kafka_data:/var/lib/kafka/data
 
 volumes:
+  fleetflow_redis_data:
   fleetflow_kafka_data:
   fleetflow_postgres_data:

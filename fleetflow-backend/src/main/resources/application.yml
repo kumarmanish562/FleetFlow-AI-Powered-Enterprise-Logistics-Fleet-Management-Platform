@@ -78,6 +78,22 @@
             starttls:
               enable: true
 
+    ai:
+      model:
+        chat: ${SPRING_AI_MODEL_CHAT:none}
+      openai:
+        api-key: ${OPENAI_API_KEY:}
+        chat:
+          options:
+            model: ${AI_MODEL:gpt-4o-mini}
+            max-tokens: ${AI_MAX_OUTPUT_TOKENS:500}
+
+    data:
+      redis:
+        host: ${REDIS_HOST:localhost}
+        port: ${REDIS_PORT:6379}
+        password: ${REDIS_PASSWORD:}
+
   # FleetFlow Application Configuration
   fleetflow:
     # JWT Authentication
@@ -90,6 +106,12 @@
     # Shipment Tracking
     tracking:
       future-tolerance-seconds: 30
+
+    ai:
+      enabled: ${FLEETFLOW_AI_ENABLED:false}
+      max-message-length: ${AI_MAX_MESSAGE_LENGTH:2000}
+      max-requests-per-minute: ${AI_MAX_REQUESTS_PER_MINUTE:10}
+      conversation-history-limit: ${AI_CONVERSATION_HISTORY_LIMIT:10}
 
     # Billing and Pricing
     billing:
