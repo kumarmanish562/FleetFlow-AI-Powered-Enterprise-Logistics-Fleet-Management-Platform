@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Activity, Bell, Boxes, Bot, ChartNoAxesCombined, CircleDollarSign, LayoutDashboard, LogOut, Map, Menu, Moon, PanelLeftClose, PanelLeftOpen, Route as RouteIcon, Search, Settings, Sun, Truck, Users, Wrench, X, type LucideIcon } from 'lucide-react';
+import { Activity, Bell, BookOpen, Boxes, Bot, ChartNoAxesCombined, CircleDollarSign, LayoutDashboard, LogOut, Map, Menu, Moon, PanelLeftClose, PanelLeftOpen, Route as RouteIcon, Search, Settings, Sun, Truck, Users, Wrench, X, type LucideIcon } from 'lucide-react';
 import { useAuth } from '../auth/AuthProvider.tsx';
 import { useTheme } from '../context/ThemeContext.tsx';
 import { useQuery } from '@tanstack/react-query';
@@ -19,7 +19,8 @@ const items: NavItem[] = [
   { to: '/billing', label: 'Billing', icon: CircleDollarSign, roles: ['ADMIN','CUSTOMER'] },
   { to: '/notifications', label: 'Notifications', icon: Bell },
   { to: '/analytics', label: 'Analytics', icon: ChartNoAxesCombined, roles: ['SUPER_ADMIN','ADMIN','FLEET_MANAGER','DISPATCHER','FINANCE_MANAGER'] },
-  { to: '/assistant', label: 'AI assistant', icon: Bot, roles: ['SUPER_ADMIN','ADMIN','FLEET_MANAGER','DISPATCHER'] },
+  { to: '/assistant', label: 'AI assistant', icon: Bot, roles: ['SUPER_ADMIN','ADMIN','FLEET_MANAGER','DISPATCHER','DRIVER','CUSTOMER','FINANCE_MANAGER'] },
+  { to: '/knowledge', label: 'Knowledge', icon: BookOpen, roles: ['SUPER_ADMIN','ADMIN'] },
   { to: '/users', label: 'User management', icon: Users, roles: ['SUPER_ADMIN','ADMIN'] },
 ];
 

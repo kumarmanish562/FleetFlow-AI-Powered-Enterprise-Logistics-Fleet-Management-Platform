@@ -120,6 +120,10 @@ Grafana
 
 ## 🤖 AI Intelligence
 
+The informational Spring AI backend foundation, its environment configuration, and API details are documented in [Phase 17 — Spring AI](docs/phase-17-spring-ai.md).
+
+The document ingestion, secure retrieval, citations, and setup for Phase 18 are documented in [Phase 18 — RAG knowledge system](docs/phase-18-rag.md).
+
 AI is designed as an intelligence layer over the FleetFlow platform.
 
 Potential capabilities include:

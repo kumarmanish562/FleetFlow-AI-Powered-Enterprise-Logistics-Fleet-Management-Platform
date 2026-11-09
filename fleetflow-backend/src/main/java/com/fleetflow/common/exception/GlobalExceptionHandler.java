@@ -6,6 +6,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.LockedException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import com.fleetflow.ai.exception.AIConversationNotFoundException;
+import com.fleetflow.ai.exception.AIProviderException;
+import com.fleetflow.ai.exception.AIRateLimitException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -15,6 +20,31 @@ import java.util.List;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException ex, HttpServletRequest request) {
+        return build(HttpStatus.FORBIDDEN, "FORBIDDEN", "Access denied", request, List.of());
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ErrorResponse> handleLargeUpload(MaxUploadSizeExceededException ex, HttpServletRequest request) {
+        return build(HttpStatus.PAYLOAD_TOO_LARGE, "PAYLOAD_TOO_LARGE", "Document exceeds the upload limit", request, List.of());
+    }
+
+    @ExceptionHandler(AIConversationNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleAIConversationNotFound(AIConversationNotFoundException ex, HttpServletRequest request) {
+        return build(HttpStatus.NOT_FOUND, "NOT_FOUND", "Conversation not found", request, List.of());
+    }
+
+    @ExceptionHandler(AIRateLimitException.class)
+    public ResponseEntity<ErrorResponse> handleAIRateLimit(AIRateLimitException ex, HttpServletRequest request) {
+        return build(HttpStatus.TOO_MANY_REQUESTS, "RATE_LIMIT_EXCEEDED", ex.getMessage(), request, List.of());
+    }
+
+    @ExceptionHandler(AIProviderException.class)
+    public ResponseEntity<ErrorResponse> handleAIProvider(AIProviderException ex, HttpServletRequest request) {
+        return build(HttpStatus.SERVICE_UNAVAILABLE, "AI_UNAVAILABLE", "AI service is temporarily unavailable", request, List.of());
+    }
 
     // ============================================================
     // RESOURCE NOT FOUND

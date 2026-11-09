@@ -1,0 +1,6 @@
+package com.fleetflow.ai.knowledge.model;
+
+public enum DocumentType {
+    DRIVER_HANDBOOK, FLEET_POLICY, MAINTENANCE_MANUAL, SAFETY_GUIDELINES,
+    DELIVERY_SOP, INSURANCE_POLICY, FINANCE_POLICY, GENERAL
+}
