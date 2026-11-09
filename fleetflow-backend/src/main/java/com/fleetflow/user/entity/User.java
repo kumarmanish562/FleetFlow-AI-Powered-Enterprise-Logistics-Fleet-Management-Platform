@@ -20,6 +20,7 @@ import lombok.Setter;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 
 @Entity
 @Table(
@@ -37,6 +38,12 @@ import java.util.Set;
 @AllArgsConstructor
 @Builder
 public class User extends BaseEntity {
+
+    public static final UUID DEFAULT_ORGANIZATION_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
+
+    @Column(name = "organization_id", nullable = false)
+    @Builder.Default
+    private UUID organizationId = DEFAULT_ORGANIZATION_ID;
 
     @Column(
             nullable = false,

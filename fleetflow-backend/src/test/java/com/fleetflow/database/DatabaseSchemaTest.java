@@ -37,7 +37,11 @@ class DatabaseSchemaTest extends PostgresContainerTest {
                 "maintenance_records",
                 "invoices",
                 "payments",
-                "notifications"
+                "notifications",
+                "organizations",
+                "knowledge_documents",
+                "knowledge_jobs",
+                "vector_store"
         );
 
         for (String table : expectedTables) {
@@ -88,5 +92,16 @@ class DatabaseSchemaTest extends PostgresContainerTest {
         );
 
         assertThat(count).isEqualTo(1);
+    }
+
+    @Test
+    void knowledgeVectorDimensionMatchesConfiguredEmbeddingModel() {
+        String format = jdbcTemplate.queryForObject("""
+                SELECT format_type(a.atttypid, a.atttypmod)
+                FROM pg_attribute a
+                JOIN pg_class c ON c.oid = a.attrelid
+                WHERE c.relname = 'vector_store' AND a.attname = 'embedding'
+                """, String.class);
+        assertThat(format).isEqualTo("vector(1536)");
     }
 }

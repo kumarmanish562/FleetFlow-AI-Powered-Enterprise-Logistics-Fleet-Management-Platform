@@ -6,6 +6,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.LockedException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import com.fleetflow.ai.exception.AIConversationNotFoundException;
 import com.fleetflow.ai.exception.AIProviderException;
 import com.fleetflow.ai.exception.AIRateLimitException;
@@ -18,6 +20,16 @@ import java.util.List;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException ex, HttpServletRequest request) {
+        return build(HttpStatus.FORBIDDEN, "FORBIDDEN", "Access denied", request, List.of());
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ErrorResponse> handleLargeUpload(MaxUploadSizeExceededException ex, HttpServletRequest request) {
+        return build(HttpStatus.PAYLOAD_TOO_LARGE, "PAYLOAD_TOO_LARGE", "Document exceeds the upload limit", request, List.of());
+    }
 
     @ExceptionHandler(AIConversationNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleAIConversationNotFound(AIConversationNotFoundException ex, HttpServletRequest request) {

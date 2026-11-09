@@ -10,12 +10,18 @@ import com.fleetflow.ai.prompt.FleetFlowPromptService;
 import com.fleetflow.ai.repository.AIConversationRepository;
 import com.fleetflow.ai.repository.AIMessageRepository;
 import com.fleetflow.ai.security.AIUsageRateLimiter;
+import com.fleetflow.ai.knowledge.service.KnowledgeRetrievalService;
+import com.fleetflow.ai.knowledge.security.KnowledgePrincipalService;
+import com.fleetflow.user.entity.User;
+import com.fleetflow.ai.knowledge.dto.KnowledgeSource;
+import org.springframework.security.core.Authentication;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.chat.client.ChatClient;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.Set;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -26,6 +32,7 @@ class AIChatServiceTest {
     private final AIConversationRepository conversations = mock(AIConversationRepository.class);
     private final AIMessageRepository messages = mock(AIMessageRepository.class);
     private final AIUsageRateLimiter limiter = mock(AIUsageRateLimiter.class);
+    private final KnowledgePrincipalService principals = mock(KnowledgePrincipalService.class);
     private AIChatService service;
 
     @BeforeEach
@@ -33,6 +40,7 @@ class AIChatServiceTest {
         when(builder.build()).thenReturn(client);
         service = new AIChatService(builder, conversations, messages, limiter,
                 new FleetFlowPromptService(), 10, 10, 2000);
+        service.setKnowledgePrincipalService(principals);
     }
 
     @Test
@@ -54,7 +62,7 @@ class AIChatServiceTest {
     @Test
     void refusesConversationOwnedByAnotherUserAsNotFound() {
         UUID id = UUID.randomUUID();
-        when(conversations.findByIdAndUsername(id, "user@example.com")).thenReturn(Optional.empty());
+        when(conversations.findByIdAndUsernameAndOrganizationId(id, "user@example.com", User.DEFAULT_ORGANIZATION_ID)).thenReturn(Optional.empty());
 
         assertThrows(AIConversationNotFoundException.class,
                 () -> service.chat(new AIChatRequest("continue", id), "user@example.com"));
@@ -94,7 +102,7 @@ class AIChatServiceTest {
     void usesBoundedChronologicalHistoryForContinuation() {
         UUID id = UUID.randomUUID();
         AIConversation conversation = new AIConversation(id, "user@example.com", "topic");
-        when(conversations.findByIdAndUsername(id, "user@example.com")).thenReturn(Optional.of(conversation));
+        when(conversations.findByIdAndUsernameAndOrganizationId(id, "user@example.com", User.DEFAULT_ORGANIZATION_ID)).thenReturn(Optional.of(conversation));
         when(messages.findTop10ByConversation_IdOrderByCreatedAtDesc(id)).thenReturn(List.of());
         when(client.prompt().system(anyString()).user(anyString()).call().entity(AIChatService.AIModelAnswer.class))
                 .thenReturn(new AIChatService.AIModelAnswer("Follow-up response", "general"));
@@ -104,5 +112,43 @@ class AIChatServiceTest {
         assertEquals(id, response.conversationId());
         verify(messages).findTop10ByConversation_IdOrderByCreatedAtDesc(id);
         verify(conversations).save(conversation);
+    }
+
+    @Test
+    void noAuthorizedContextReturnsSafeAnswerWithoutCallingModel() {
+        KnowledgeRetrievalService knowledge = mock(KnowledgeRetrievalService.class);
+        Authentication authentication = mock(Authentication.class);
+        when(authentication.getName()).thenReturn("user@example.com");
+        when(principals.resolve(authentication)).thenReturn(new KnowledgePrincipalService.Principal(UUID.randomUUID(), User.DEFAULT_ORGANIZATION_ID, Set.of("DRIVER")));
+        when(knowledge.retrieve("What is the company policy?", authentication)).thenReturn(List.of());
+        when(conversations.save(any(AIConversation.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        service.setKnowledgeRetrievalService(knowledge);
+
+        var response = service.chat(new AIChatRequest("What is the company policy?", null), authentication);
+
+        assertTrue(response.answer().contains("could not find an authorized company document"));
+        assertTrue(response.sources().isEmpty());
+        verifyNoInteractions(client);
+        verify(messages, times(2)).save(any(AIMessage.class));
+    }
+
+    @Test
+    void groundedAnswerReturnsTraceableSource() {
+        KnowledgeRetrievalService knowledge = mock(KnowledgeRetrievalService.class);
+        Authentication authentication = mock(Authentication.class);
+        when(authentication.getName()).thenReturn("user@example.com");
+        when(principals.resolve(authentication)).thenReturn(new KnowledgePrincipalService.Principal(UUID.randomUUID(), User.DEFAULT_ORGANIZATION_ID, Set.of("DRIVER")));
+        KnowledgeSource source = new KnowledgeSource(UUID.randomUUID(), "handbook.pdf", "2.0", 3,
+                "Report a breakdown to dispatch.", 0.91);
+        when(knowledge.retrieve("Breakdown procedure?", authentication)).thenReturn(List.of(source));
+        when(conversations.save(any(AIConversation.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(client.prompt().system(anyString()).user(anyString()).call().entity(AIChatService.AIModelAnswer.class))
+                .thenReturn(new AIChatService.AIModelAnswer("Call dispatch [1].", "policy"));
+        service.setKnowledgeRetrievalService(knowledge);
+
+        var response = service.chat(new AIChatRequest("Breakdown procedure?", null), authentication);
+
+        assertEquals("Call dispatch [1].", response.answer());
+        assertEquals(source, response.sources().getFirst());
     }
 }

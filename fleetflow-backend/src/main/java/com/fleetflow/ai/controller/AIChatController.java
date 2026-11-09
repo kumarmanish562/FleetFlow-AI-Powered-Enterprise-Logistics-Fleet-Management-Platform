@@ -21,6 +21,6 @@ public class AIChatController {
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'FLEET_MANAGER', 'DISPATCHER', 'DRIVER', 'CUSTOMER', 'FINANCE_MANAGER')")
     public ResponseEntity<AIChatResponse> chat(@Valid @RequestBody AIChatRequest request,
                                                Authentication authentication) {
-        return ResponseEntity.ok(service.chat(request, authentication.getName()));
+        return ResponseEntity.ok(service.chat(request, authentication));
     }
 }

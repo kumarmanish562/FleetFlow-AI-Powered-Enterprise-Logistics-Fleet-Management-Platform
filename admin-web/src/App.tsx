@@ -6,6 +6,8 @@ import { AppShell } from './components/AppShell.tsx';
 const LoginPage = lazy(() => import('./pages/LoginPage.jsx').then((module) => ({ default: module.LoginPage })));
 const DashboardPage = lazy(() => import('./pages/DashboardPage.jsx').then((module) => ({ default: module.DashboardPage })));
 const ResourcePage = lazy(() => import('./pages/ResourcePage.jsx').then((module) => ({ default: module.ResourcePage })));
+const AssistantPage = lazy(() => import('./pages/AssistantPage.jsx').then((module) => ({ default: module.AssistantPage })));
+const KnowledgePage = lazy(() => import('./pages/KnowledgePage.jsx').then((module) => ({ default: module.KnowledgePage })));
 
 function Deferred({ children }: { children: ReactNode }) {
   return <Suspense fallback={<div className="screen-state">Loading workspace…</div>}>{children}</Suspense>;
@@ -40,7 +42,8 @@ export default function App() {
       <Route path="billing" element={<Protected roles={['ADMIN','CUSTOMER']}><Deferred><ResourcePage kind="billing" /></Deferred></Protected>} />
       <Route path="notifications" element={<Deferred><ResourcePage kind="notifications" /></Deferred>} />
       <Route path="analytics" element={<Protected roles={['SUPER_ADMIN','ADMIN','FLEET_MANAGER','DISPATCHER','FINANCE_MANAGER']}><Deferred><ResourcePage kind="analytics" /></Deferred></Protected>} />
-      <Route path="assistant" element={<Protected roles={['SUPER_ADMIN','ADMIN','FLEET_MANAGER','DISPATCHER']}><Deferred><ResourcePage kind="assistant" /></Deferred></Protected>} />
+      <Route path="assistant" element={<Protected roles={['SUPER_ADMIN','ADMIN','FLEET_MANAGER','DISPATCHER','DRIVER','CUSTOMER','FINANCE_MANAGER']}><Deferred><AssistantPage /></Deferred></Protected>} />
+      <Route path="knowledge" element={<Protected roles={['SUPER_ADMIN','ADMIN']}><Deferred><KnowledgePage /></Deferred></Protected>} />
       <Route path="users" element={<Protected roles={['SUPER_ADMIN','ADMIN']}><Deferred><ResourcePage kind="users" /></Deferred></Protected>} />
       <Route path="settings" element={<Deferred><ResourcePage kind="settings" /></Deferred>} />
       <Route path="*" element={<Navigate to="/" replace />} />

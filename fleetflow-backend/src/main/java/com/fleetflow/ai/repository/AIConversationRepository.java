@@ -7,4 +7,5 @@ import java.util.UUID;
 
 public interface AIConversationRepository extends JpaRepository<AIConversation, UUID> {
     Optional<AIConversation> findByIdAndUsername(UUID id, String username);
+    Optional<AIConversation> findByIdAndUsernameAndOrganizationId(UUID id, String username, UUID organizationId);
 }
