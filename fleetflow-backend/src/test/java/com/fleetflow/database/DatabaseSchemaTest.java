@@ -41,7 +41,11 @@ class DatabaseSchemaTest extends PostgresContainerTest {
                 "organizations",
                 "knowledge_documents",
                 "knowledge_jobs",
-                "vector_store"
+                "vector_store",
+                "ai_conversations",
+                "ai_messages",
+                "ai_message_feedback",
+                "ai_message_sources"
         );
 
         for (String table : expectedTables) {
@@ -103,5 +107,22 @@ class DatabaseSchemaTest extends PostgresContainerTest {
                 WHERE c.relname = 'vector_store' AND a.attname = 'embedding'
                 """, String.class);
         assertThat(format).isEqualTo("vector(1536)");
+    }
+
+    @Test
+    void assistantSchemaHasStableOwnerAndRetentionFields() {
+        Integer count = jdbcTemplate.queryForObject("""
+                SELECT COUNT(*) FROM information_schema.columns
+                WHERE table_schema='public' AND table_name='ai_conversations'
+                  AND column_name IN ('user_id','organization_id','deleted_at','expires_at')
+                """, Integer.class);
+        assertThat(count).isEqualTo(4);
+
+        Integer citationCount = jdbcTemplate.queryForObject("""
+                SELECT COUNT(*) FROM information_schema.columns
+                WHERE table_schema='public' AND table_name='ai_message_sources'
+                  AND column_name IN ('message_id','document_id','chunk_id','page_number','similarity')
+                """, Integer.class);
+        assertThat(citationCount).isEqualTo(5);
     }
 }

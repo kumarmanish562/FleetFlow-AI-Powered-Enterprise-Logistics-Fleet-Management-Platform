@@ -70,6 +70,28 @@ class AIChatServiceTest {
     }
 
     @Test
+    void authenticatedContinuationUsesStableUserAndOrganizationOwnership() {
+        UUID id = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+        Authentication authentication = mock(Authentication.class);
+        when(authentication.getName()).thenReturn("renamed@example.com");
+        when(principals.resolve(authentication)).thenReturn(new KnowledgePrincipalService.Principal(
+                userId, User.DEFAULT_ORGANIZATION_ID, Set.of("DRIVER")));
+        AIConversation conversation = new AIConversation(id, "old@example.com", userId,
+                User.DEFAULT_ORGANIZATION_ID, "breakdown");
+        when(conversations.findByIdAndUserIdAndOrganizationId(id, userId, User.DEFAULT_ORGANIZATION_ID))
+                .thenReturn(Optional.of(conversation));
+        when(messages.findTop10ByConversation_IdOrderByCreatedAtDesc(id)).thenReturn(List.of());
+        when(client.prompt().system(anyString()).user(anyString()).call().entity(AIChatService.AIModelAnswer.class))
+                .thenReturn(new AIChatService.AIModelAnswer("Check the handbook.", "policy"));
+
+        service.chat(new AIChatRequest("continue", id), authentication);
+
+        verify(conversations).findByIdAndUserIdAndOrganizationId(id, userId, User.DEFAULT_ORGANIZATION_ID);
+        verify(conversations, never()).findByIdAndUsernameAndOrganizationId(any(), anyString(), any());
+    }
+
+    @Test
     void rejectsConfiguredMessageLimitBeforeProviderCall() {
         service = new AIChatService(builder, conversations, messages, limiter,
                 new FleetFlowPromptService(), 10, 10, 12);
