@@ -21,4 +21,5 @@ public class AIMessage {
     @PrePersist void onCreate() { createdAt = Instant.now(); }
     public MessageRole getRole() { return role; }
     public String getContent() { return content; }
+    public UUID getId() { return id; }
 }

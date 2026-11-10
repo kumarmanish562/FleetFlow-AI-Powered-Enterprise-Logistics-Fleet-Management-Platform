@@ -46,6 +46,9 @@ node_modules/
 dist/
 build/
 .vite/
+__pycache__/
+*.py[cod]
+rag-evaluation*.json
 
 # ---------------------------------------------------------
 # OS

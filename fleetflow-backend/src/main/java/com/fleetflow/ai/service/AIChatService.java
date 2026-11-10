@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import java.util.*;
@@ -39,19 +40,33 @@ public class AIChatService {
     private final int rateLimit;
     private final int historyLimit;
     private final int maxMessageLength;
+    private final JdbcTemplate jdbc;
+    private final int retentionDays;
     private KnowledgeRetrievalService knowledge;
     private KnowledgePrincipalService principals;
 
+    @Autowired
     public AIChatService(ChatClient.Builder builder, AIConversationRepository conversations,
                          AIMessageRepository messages, AIUsageRateLimiter rateLimiter,
                          FleetFlowPromptService promptService,
+                         JdbcTemplate jdbc,
+                         @Value("${fleetflow.ai.conversation-retention-days:90}") int retentionDays,
                          @Value("${fleetflow.ai.max-requests-per-minute:10}") int rateLimit,
                          @Value("${fleetflow.ai.conversation-history-limit:10}") int historyLimit,
                          @Value("${fleetflow.ai.max-message-length:2000}") int maxMessageLength) {
         this.chatClient = builder.build(); this.conversations = conversations; this.messages = messages;
         this.rateLimiter = rateLimiter; this.promptService = promptService;
+        this.jdbc = jdbc;
+        this.retentionDays = Math.max(1, retentionDays);
         this.rateLimit = rateLimit; this.historyLimit = Math.min(10, Math.max(0, historyLimit));
         this.maxMessageLength = Math.min(2000, Math.max(1, maxMessageLength));
+    }
+
+    public AIChatService(ChatClient.Builder builder, AIConversationRepository conversations,
+                         AIMessageRepository messages, AIUsageRateLimiter rateLimiter,
+                         FleetFlowPromptService promptService, int rateLimit, int historyLimit,
+                         int maxMessageLength) {
+        this(builder, conversations, messages, rateLimiter, promptService, null, 90, rateLimit, historyLimit, maxMessageLength);
     }
 
     @Autowired(required = false)
@@ -69,14 +84,15 @@ public class AIChatService {
     }
 
     private AIChatResponse chatInternal(AIChatRequest request, String username, Authentication authentication) {
-        UUID organizationId = authentication == null ? User.DEFAULT_ORGANIZATION_ID :
-                Objects.requireNonNull(principals, "Knowledge principal service is required")
-                        .resolve(authentication).organizationId();
+        KnowledgePrincipalService.Principal principal = authentication == null ? null :
+                Objects.requireNonNull(principals, "Knowledge principal service is required").resolve(authentication);
+        UUID organizationId = principal == null ? User.DEFAULT_ORGANIZATION_ID : principal.organizationId();
+        UUID userId = principal == null ? null : principal.userId();
         if (request.message().length() > maxMessageLength) {
             throw new BadRequestException("message must be at most " + maxMessageLength + " characters");
         }
         rateLimiter.check(username, rateLimit);
-        AIConversation conversation = loadOrCreate(request, username, organizationId);
+        AIConversation conversation = loadOrCreate(request, username, userId, organizationId);
         List<AIMessage> history = messages.findTop10ByConversation_IdOrderByCreatedAtDesc(conversation.getId());
         Collections.reverse(history);
         // The submitted message is saved before the external call so failed requests retain the user's input.
@@ -90,7 +106,7 @@ public class AIChatService {
 
         List<KnowledgeSource> sources = List.of();
         if (knowledge != null) {
-            try { sources = knowledge.retrieve(request.message().trim(), authentication); }
+            try { sources = knowledge.retrieve(retrievalQuery(history, request.message().trim()), authentication); }
             catch (AccessDeniedException ex) { throw ex; }
             catch (Exception ex) { throw new AIProviderException("Knowledge retrieval is temporarily unavailable", ex); }
             if (sources.isEmpty()) {
@@ -119,27 +135,69 @@ public class AIChatService {
         if (answer == null || answer.answer() == null || answer.answer().isBlank()) {
             throw new AIProviderException("AI service returned an empty response", new IllegalStateException("Empty model response"));
         }
-        return finish(conversation, answer.answer().trim(), answer.category(), sources);
+        return finish(conversation, validateCitations(answer.answer().trim(), sources.size()), answer.category(), sources);
+    }
+
+    private String validateCitations(String answer, int sourceCount) {
+        // Only numbered citations mapped to the exact retrieval result set are rendered to users.
+        return java.util.regex.Pattern.compile("\\[(\\d+)]").matcher(answer).replaceAll(match -> {
+            try {
+                int reference = Integer.parseInt(match.group(1));
+                return reference >= 1 && reference <= sourceCount ? match.group() : "";
+            } catch (NumberFormatException ignored) { return ""; }
+        }).replaceAll("[ \\t]{2,}", " ").trim();
+    }
+
+    private String retrievalQuery(List<AIMessage> history, String currentMessage) {
+        if (history.isEmpty()) return currentMessage;
+        String previousContext = history.stream().skip(Math.max(0, history.size() - Math.min(historyLimit, 6)))
+                .map(message -> message.getRole().name() + ": " + message.getContent())
+                .reduce((left, right) -> left + "\n" + right).orElse("");
+        return "Previous conversation context:\n" + previousContext + "\nCurrent question:\n" + currentMessage;
     }
 
     private AIChatResponse finish(AIConversation conversation, String safeAnswer,
                                   String category, List<KnowledgeSource> sources) {
-        messages.save(new AIMessage(UUID.randomUUID(), conversation, MessageRole.ASSISTANT, safeAnswer));
+        boolean insufficientEvidence = category != null &&
+                (category.equalsIgnoreCase("no_context") || category.equalsIgnoreCase("no_answer")
+                        || category.equalsIgnoreCase("insufficient_evidence"));
+        List<KnowledgeSource> answerSources = insufficientEvidence ? List.of() : sources;
+        AIMessage assistant = new AIMessage(UUID.randomUUID(), conversation, MessageRole.ASSISTANT, safeAnswer);
+        messages.save(assistant);
+        for (int i = 0; i < answerSources.size(); i++) {
+            KnowledgeSource source = answerSources.get(i);
+            if (source.chunkId() == null || jdbc == null) continue;
+            jdbc.update("""
+                    INSERT INTO ai_message_sources(message_id,ordinal,document_id,chunk_id,filename,version,page_number,excerpt,similarity)
+                    VALUES (?,?,?,?,?,?,?,?,?)""", assistant.getId(), i, source.documentId(), UUID.fromString(source.chunkId()),
+                    source.filename(), source.version(), source.pageNumber(), source.excerpt(), source.similarity());
+        }
         conversation.touch(); conversations.save(conversation);
+        if (jdbc != null) jdbc.update("UPDATE ai_conversations SET expires_at=CURRENT_TIMESTAMP + (? * INTERVAL '1 day') WHERE id=?", retentionDays, conversation.getId());
         log.info("AI request completed. conversationId={}, category={}", conversation.getId(),
                 category == null ? "uncategorized" : category);
-        return new AIChatResponse(conversation.getId(), safeAnswer, "SUCCESS", sources);
+        String status = insufficientEvidence ? "INSUFFICIENT_EVIDENCE"
+                : answerSources.isEmpty() ? "SUCCESS" : "ANSWERED";
+        return new AIChatResponse(conversation.getId(), assistant.getId(), safeAnswer, status, answerSources);
     }
 
-    private AIConversation loadOrCreate(AIChatRequest request, String username, UUID organizationId) {
+    private AIConversation loadOrCreate(AIChatRequest request, String username, UUID userId, UUID organizationId) {
         if (request.conversationId() == null) {
             String title = request.message().trim();
             int codePoints = title.codePointCount(0, title.length());
             if (codePoints > 200) title = title.substring(0, title.offsetByCodePoints(0, 197)) + "...";
-            return conversations.save(new AIConversation(UUID.randomUUID(), username, organizationId, title));
+            AIConversation created = userId == null
+                    ? new AIConversation(UUID.randomUUID(), username, organizationId, title)
+                    : new AIConversation(UUID.randomUUID(), username, userId, organizationId, title);
+            return conversations.save(created);
         }
-        return conversations.findByIdAndUsernameAndOrganizationId(request.conversationId(), username, organizationId)
+        Optional<AIConversation> owned = userId == null
+                ? conversations.findByIdAndUsernameAndOrganizationId(request.conversationId(), username, organizationId)
+                : conversations.findByIdAndUserIdAndOrganizationId(request.conversationId(), userId, organizationId);
+        AIConversation conversation = owned
+                .filter(AIConversation::isActive)
                 .orElseThrow(() -> new AIConversationNotFoundException(request.conversationId()));
+        return conversation;
     }
 
     public record AIModelAnswer(String answer, String category) {}

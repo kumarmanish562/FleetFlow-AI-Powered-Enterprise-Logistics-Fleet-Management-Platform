@@ -8,6 +8,7 @@ import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.filter.FilterExpressionBuilder;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -22,14 +23,23 @@ public class KnowledgeRetrievalService {
     private final KnowledgePrincipalService principals;
     private final VectorStore vectors;
     private final int topK;
+    private final int maxContextChunks;
     private final double threshold;
 
+    @Autowired
     public KnowledgeRetrievalService(KnowledgeDocumentRepository documents, KnowledgePrincipalService principals,
                                      VectorStore vectors,
                                      @Value("${fleetflow.knowledge.retrieval.top-k:5}") int topK,
-                                     @Value("${fleetflow.knowledge.retrieval.similarity-threshold:0.7}") double threshold) {
+                                     @Value("${fleetflow.knowledge.retrieval.similarity-threshold:0.7}") double threshold,
+                                     @Value("${fleetflow.knowledge.retrieval.max-context-chunks:6}") int maxContextChunks) {
         this.documents = documents; this.principals = principals; this.vectors = vectors;
         this.topK = Math.max(1, Math.min(20, topK)); this.threshold = Math.max(0, Math.min(1, threshold));
+        this.maxContextChunks = Math.max(1, Math.min(10, maxContextChunks));
+    }
+
+    public KnowledgeRetrievalService(KnowledgeDocumentRepository documents, KnowledgePrincipalService principals,
+                                     VectorStore vectors, int topK, double threshold) {
+        this(documents, principals, vectors, topK, threshold, 6);
     }
 
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
@@ -51,7 +61,7 @@ public class KnowledgeRetrievalService {
                 .similarityThreshold(threshold).filterExpression(filter).build());
         if (results == null) return List.of();
         List<KnowledgeSource> sources = new ArrayList<>();
-        for (var chunk : results) {
+        for (var chunk : results.stream().limit(maxContextChunks).toList()) {
             Map<String, Object> metadata = chunk.getMetadata();
             String id = String.valueOf(metadata.get("documentId"));
             if (!allowedIds.contains(id)) continue;
@@ -59,7 +69,7 @@ public class KnowledgeRetrievalService {
             String text = chunk.getText() == null ? "" : chunk.getText();
             sources.add(new KnowledgeSource(UUID.fromString(id), String.valueOf(metadata.get("filename")),
                     String.valueOf(metadata.get("version")), page,
-                    text.substring(0, Math.min(text.length(), 1200)), chunk.getScore()));
+                    text.substring(0, Math.min(text.length(), 1200)), chunk.getScore(), chunk.getId()));
         }
         return List.copyOf(sources);
     }

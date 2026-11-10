@@ -60,6 +60,39 @@ class KnowledgeRetrievalServiceTest {
         verify(vectors).similaritySearch(argThat((SearchRequest request) -> request.getFilterExpression() != null));
     }
 
+    @Test
+    void rejectsUnauthorizedVectorRowsEvenIfVectorStoreReturnsOne() {
+        UUID allowedId = UUID.randomUUID();
+        UUID forbiddenId = UUID.randomUUID();
+        when(principals.resolve(authentication)).thenReturn(new KnowledgePrincipalService.Principal(UUID.randomUUID(), org, Set.of("DRIVER")));
+        when(documents.findByOrganizationIdAndStatus(org, DocumentStatus.INDEXED))
+                .thenReturn(List.of(document(allowedId, List.of("DRIVER"))));
+        Document unauthorizedChunk = new Document(UUID.randomUUID().toString(), "Confidential finance text", Map.of(
+                "documentId", forbiddenId.toString(), "organizationId", org.toString(), "filename", "finance.pdf",
+                "version", "1.0", "active", true));
+        when(vectors.similaritySearch(any(SearchRequest.class))).thenReturn(List.of(unauthorizedChunk));
+
+        assertTrue(service.retrieve("finance policy", authentication).isEmpty());
+    }
+
+    @Test
+    void limitsContextChunksAndCarriesStableChunkIds() {
+        UUID documentId = UUID.randomUUID();
+        when(principals.resolve(authentication)).thenReturn(new KnowledgePrincipalService.Principal(UUID.randomUUID(), org, Set.of("DRIVER")));
+        when(documents.findByOrganizationIdAndStatus(org, DocumentStatus.INDEXED))
+                .thenReturn(List.of(document(documentId, List.of("DRIVER"))));
+        List<Document> chunks = java.util.stream.IntStream.range(0, 3).mapToObj(index -> new Document(UUID.randomUUID().toString(),
+                "chunk " + index, Map.of("documentId", documentId.toString(), "organizationId", org.toString(),
+                        "filename", "handbook.pdf", "version", "1.0", "active", true))).toList();
+        when(vectors.similaritySearch(any(SearchRequest.class))).thenReturn(chunks);
+        KnowledgeRetrievalService limited = new KnowledgeRetrievalService(documents, principals, vectors, 10, 0.7, 2);
+
+        var sources = limited.retrieve("policy", authentication);
+
+        assertEquals(2, sources.size());
+        assertNotNull(sources.getFirst().chunkId());
+    }
+
     private KnowledgeDocument document(UUID id, List<String> roles) {
         KnowledgeDocument d = new KnowledgeDocument(); d.setId(id); d.setOrganizationId(org);
         d.setStatus(DocumentStatus.INDEXED); d.setAccessRoles(roles); return d;

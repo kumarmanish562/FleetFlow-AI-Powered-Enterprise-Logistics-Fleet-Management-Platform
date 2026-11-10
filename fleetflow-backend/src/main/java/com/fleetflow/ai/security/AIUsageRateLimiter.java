@@ -1,6 +1,8 @@
 package com.fleetflow.ai.security;
 
 import com.fleetflow.ai.exception.AIRateLimitException;
+import com.fleetflow.ai.exception.AIProviderException;
+import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Component;
@@ -29,9 +31,14 @@ public class AIUsageRateLimiter {
 
     public void check(String user, int limit) {
         long now = System.currentTimeMillis();
-        Long count = redis.execute(SCRIPT, List.of("fleetflow:ai:rate:" + digest(user)),
-                Long.toString(now - 60_000L), Long.toString(now), Integer.toString(limit), UUID.randomUUID().toString());
-        if (count == null) throw new IllegalStateException("AI rate limiter unavailable");
+        Long count;
+        try {
+            count = redis.execute(SCRIPT, List.of("fleetflow:ai:rate:" + digest(user)),
+                    Long.toString(now - 60_000L), Long.toString(now), Integer.toString(limit), UUID.randomUUID().toString());
+        } catch (DataAccessException ex) {
+            throw new AIProviderException("AI rate limiting is temporarily unavailable", ex);
+        }
+        if (count == null) throw new AIProviderException("AI rate limiting is temporarily unavailable", new IllegalStateException("Redis returned no rate-limit result"));
         if (count == 0) throw new AIRateLimitException("You have reached your AI request limit. Try again later.");
     }
 

@@ -9,10 +9,13 @@ import java.util.UUID;
 public class AIConversation {
     @Id private UUID id;
     @Column(nullable = false, length = 254) private String username;
+    @Column(name = "user_id") private UUID userId;
     @Column(name = "organization_id", nullable = false) private UUID organizationId;
     @Column(length = 200) private String title;
     @Column(name = "created_at", nullable = false, updatable = false) private Instant createdAt;
     @Column(name = "updated_at", nullable = false) private Instant updatedAt;
+    @Column(name = "deleted_at") private Instant deletedAt;
+    @Column(name = "expires_at", insertable = false, updatable = false) private Instant expiresAt;
 
     protected AIConversation() {}
     public AIConversation(UUID id, String username, String title) {
@@ -21,11 +24,16 @@ public class AIConversation {
     public AIConversation(UUID id, String username, UUID organizationId, String title) {
         this.id = id; this.username = username; this.organizationId = organizationId; this.title = title;
     }
+    public AIConversation(UUID id, String username, UUID userId, UUID organizationId, String title) {
+        this.id = id; this.username = username; this.userId = userId; this.organizationId = organizationId; this.title = title;
+    }
     @PrePersist void onCreate() { Instant now = Instant.now(); createdAt = now; updatedAt = now; }
     @PreUpdate void onUpdate() { updatedAt = Instant.now(); }
     public void touch() { updatedAt = Instant.now(); }
     public UUID getId() { return id; }
     public String getUsername() { return username; }
     public UUID getOrganizationId() { return organizationId; }
+    public UUID getUserId() { return userId; }
     public String getTitle() { return title; }
+    public boolean isActive() { return deletedAt == null && (expiresAt == null || expiresAt.isAfter(Instant.now())); }
 }
