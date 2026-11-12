@@ -18,6 +18,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
+import java.time.Instant;
 
 @Repository
 public class AnalyticsRepository {
@@ -315,6 +316,77 @@ public class AnalyticsRepository {
                 GROUP BY r.id,r.route_number ORDER BY r.route_number
                 """.formatted(where);
         return chart("delivery-on-time-by-route-percent",sql,params);
+    }
+
+    public List<RouteDelayMetric> routeDelaysForAI(Instant fromInclusive, Instant toExclusive, UUID organizationId) {
+        return jdbc.query("""
+                SELECT r.route_number AS route_number,
+                       count(d.id) AS completed_deliveries,
+                       count(d.id) FILTER (WHERE s.expected_delivery_date IS NOT NULL
+                           AND d.delivered_at > s.expected_delivery_date) AS delayed_deliveries
+                FROM deliveries d
+                JOIN shipments s ON s.id=d.shipment_id AND s.organization_id=d.organization_id
+                JOIN routes r ON r.id=s.route_id AND r.organization_id=s.organization_id
+                WHERE d.organization_id=:organizationId
+                  AND d.status='DELIVERED'
+                  AND d.delivered_at >= :fromInclusive
+                  AND d.delivered_at < :toExclusive
+                GROUP BY r.id,r.route_number
+                ORDER BY delayed_deliveries DESC,completed_deliveries DESC,r.route_number
+                LIMIT 20
+                """, new MapSqlParameterSource().addValue("organizationId", organizationId)
+                .addValue("fromInclusive", fromInclusive).addValue("toExclusive", toExclusive),
+                (rs, row) -> new RouteDelayMetric(rs.getString("route_number"),
+                        rs.getLong("completed_deliveries"), rs.getLong("delayed_deliveries")));
+    }
+
+    public record RouteDelayMetric(String routeNumber, long completedDeliveries, long delayedDeliveries) {}
+
+    public AnalyticsSummaryResponse.Fleet fleetForAI(UUID organizationId) {
+        var row = one("""
+                SELECT count(*) total,
+                  count(*) FILTER (WHERE status NOT IN ('OUT_OF_SERVICE','RETIRED')) active,
+                  count(*) FILTER (WHERE status='AVAILABLE') available,
+                  count(*) FILTER (WHERE status IN ('ASSIGNED','IN_TRANSIT')) assigned,
+                  count(*) FILTER (WHERE status='MAINTENANCE') maintenance,
+                  count(*) FILTER (WHERE status IN ('OUT_OF_SERVICE','RETIRED')) inactive
+                FROM vehicles WHERE organization_id=:organizationId
+                """, new MapSqlParameterSource("organizationId", organizationId));
+        long total = number(row, "total");
+        long assigned = number(row, "assigned");
+        return new AnalyticsSummaryResponse.Fleet(total, number(row, "active"), number(row, "available"),
+                assigned, number(row, "maintenance"), number(row, "inactive"), percent(assigned, total));
+    }
+
+    public AnalyticsSummaryResponse.Delivery deliveryPerformanceForAI(
+            Instant fromInclusive, Instant toExclusive, UUID organizationId) {
+        var row = one("""
+                SELECT count(d.id) total,
+                  count(d.id) FILTER (WHERE d.status='DELIVERED' AND d.delivered_at IS NOT NULL) successful,
+                  count(d.id) FILTER (WHERE d.status='FAILED') failed,
+                  count(d.id) FILTER (WHERE d.status='DELIVERED' AND d.delivered_at IS NOT NULL
+                    AND s.expected_delivery_date IS NOT NULL AND d.delivered_at <= s.expected_delivery_date) on_time,
+                  count(d.id) FILTER (WHERE d.status='DELIVERED' AND d.delivered_at IS NOT NULL
+                    AND s.expected_delivery_date IS NOT NULL AND d.delivered_at > s.expected_delivery_date) delayed,
+                  count(d.id) FILTER (WHERE d.status='DELIVERED' AND d.delivered_at IS NOT NULL
+                    AND s.expected_delivery_date IS NOT NULL) on_time_eligible,
+                  avg(extract(epoch from (d.delivered_at-s.created_at))/3600.0)
+                    FILTER (WHERE d.status='DELIVERED' AND d.delivered_at IS NOT NULL) avg_hours,
+                  avg(r.distance_km) FILTER (WHERE d.status='DELIVERED' AND d.delivered_at IS NOT NULL) average_distance
+                FROM deliveries d
+                JOIN shipments s ON s.id=d.shipment_id AND s.organization_id=d.organization_id
+                LEFT JOIN routes r ON r.id=s.route_id AND r.organization_id=s.organization_id
+                WHERE d.organization_id=:organizationId
+                  AND coalesce(d.delivered_at,d.updated_at,d.created_at) >= :fromInclusive
+                  AND coalesce(d.delivered_at,d.updated_at,d.created_at) < :toExclusive
+                """, new MapSqlParameterSource("organizationId", organizationId)
+                .addValue("fromInclusive", fromInclusive).addValue("toExclusive", toExclusive));
+        long successful = number(row, "successful");
+        long failed = number(row, "failed");
+        return new AnalyticsSummaryResponse.Delivery(number(row, "total"), successful, failed,
+                number(row, "on_time"), number(row, "delayed"), percent(successful, successful + failed),
+                percent(number(row, "on_time"), number(row, "on_time_eligible")), decimal(row, "avg_hours"),
+                decimal(row, "average_distance"));
     }
 
     public ChartDataResponse deliveryByCustomer(DateRangeRequest filters) {

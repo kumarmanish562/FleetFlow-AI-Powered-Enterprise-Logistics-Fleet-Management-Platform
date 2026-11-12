@@ -17,6 +17,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.UUID;
+import com.fleetflow.user.service.CurrentOrganizationProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @Service
 @Transactional(readOnly = true)
@@ -24,13 +26,21 @@ public class CustomerServiceImpl implements CustomerService {
 
     private final CustomerRepository customerRepository;
     private final CustomerMapper customerMapper;
+    private final CurrentOrganizationProvider organizations;
 
+    @Autowired
     public CustomerServiceImpl(
             CustomerRepository customerRepository,
-            CustomerMapper customerMapper
+            CustomerMapper customerMapper,
+            CurrentOrganizationProvider organizations
     ) {
         this.customerRepository = customerRepository;
         this.customerMapper = customerMapper;
+        this.organizations = organizations;
+    }
+
+    public CustomerServiceImpl(CustomerRepository customerRepository, CustomerMapper customerMapper) {
+        this(customerRepository, customerMapper, null);
     }
 
     @Override
@@ -54,6 +64,7 @@ public class CustomerServiceImpl implements CustomerService {
         }
 
         Customer customer = customerMapper.toEntity(request);
+        if (organizations != null) customer.setOrganizationId(organizations.requireOrganizationId());
 
         customer.setStatus(CustomerStatus.ACTIVE);
 

@@ -65,6 +65,24 @@ class AIConversationManagementServiceTest {
     }
 
     @Test
+    void reopenedConversationReturnsOperationalRecordProvenance() {
+        UUID messageId = UUID.randomUUID();
+        UUID recordId = UUID.randomUUID();
+        when(jdbc.queryForObject(contains("COUNT(*)"), eq(Integer.class), any(), any(), any())).thenReturn(1);
+        when(jdbc.queryForList(contains("ai_message_sources"), any(Object[].class))).thenReturn(List.of());
+        when(jdbc.queryForList(contains("ai_message_operational_evidence"), any(Object[].class)))
+                .thenReturn(List.of(Map.of("toolName", "getVehicleStatus", "source", "OPERATIONAL_RECORD",
+                        "value", "{}", "referenceIds", "[\"" + recordId + "\"]",
+                        "observedAt", java.time.Instant.now())));
+
+        Map<String,Object> response = service.sources(messageId, authentication);
+
+        List<?> facts = (List<?>) response.get("verifiedFacts");
+        assertEquals(1, facts.size());
+        assertEquals(List.of(recordId.toString()), ((Map<?,?>) facts.getFirst()).get("referenceIds"));
+    }
+
+    @Test
     void missingSourceDocumentIsReturnedAsNotFound() {
         UUID documentId = UUID.randomUUID();
         when(documents.findByIdAndOrganizationId(documentId, organizationId)).thenReturn(Optional.empty());

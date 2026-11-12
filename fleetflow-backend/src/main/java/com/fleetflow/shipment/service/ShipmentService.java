@@ -14,6 +14,8 @@ public interface ShipmentService {
     ShipmentResponse create(ShipmentCreateRequest request);
     ShipmentResponse getById(UUID id);
     ShipmentResponse getByShipmentNumber(String shipmentNumber);
+    ShipmentResponse getOperationalByShipmentNumber(String shipmentNumber, UUID organizationId, UUID customerId);
+    Page<ShipmentResponse> getOperationalFailures(UUID organizationId, UUID customerId, Pageable pageable);
     Page<ShipmentResponse> list(ShipmentStatus status, UUID customerId, Pageable pageable);
     ShipmentResponse confirm(UUID id);
     ShipmentResponse assign(UUID id, ShipmentAssignmentRequest request);

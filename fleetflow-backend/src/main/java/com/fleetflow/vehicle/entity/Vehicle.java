@@ -21,6 +21,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 @Entity
 @Table(
@@ -52,6 +53,10 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @Builder
 public class Vehicle extends BaseEntity {
+
+    @Column(name = "organization_id", nullable = false, updatable = false)
+    @Builder.Default
+    private UUID organizationId = com.fleetflow.user.entity.User.DEFAULT_ORGANIZATION_ID;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(

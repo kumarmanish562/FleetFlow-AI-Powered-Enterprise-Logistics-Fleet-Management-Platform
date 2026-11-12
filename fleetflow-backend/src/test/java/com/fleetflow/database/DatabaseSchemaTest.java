@@ -45,7 +45,13 @@ class DatabaseSchemaTest extends PostgresContainerTest {
                 "ai_conversations",
                 "ai_messages",
                 "ai_message_feedback",
-                "ai_message_sources"
+                "ai_message_sources",
+                "ai_operational_events",
+                "ai_customer_user_access",
+                "ai_message_operational_evidence",
+                "ai_operational_tool_audit",
+                "ai_message_response_sections",
+                "operational_incidents"
         );
 
         for (String table : expectedTables) {
@@ -124,5 +130,26 @@ class DatabaseSchemaTest extends PostgresContainerTest {
                   AND column_name IN ('message_id','document_id','chunk_id','page_number','similarity')
                 """, Integer.class);
         assertThat(citationCount).isEqualTo(5);
+    }
+
+    @Test
+    void phase20SchemaHasTenantOwnershipAndOperationalEvidence() {
+        Integer tenantColumns = jdbcTemplate.queryForObject("""
+                SELECT COUNT(*) FROM information_schema.columns
+                WHERE table_schema='public' AND column_name='organization_id'
+                  AND table_name IN ('vehicles','customers','shipments','routes','tracking_events',
+                    'deliveries','maintenance_records','drivers','ai_operational_events')
+                """, Integer.class);
+        assertThat(tenantColumns).isEqualTo(9);
+
+        Integer tenantConstraints = jdbcTemplate.queryForObject("""
+                SELECT COUNT(*) FROM information_schema.table_constraints
+                WHERE constraint_schema='public' AND constraint_name IN (
+                    'fk_shipments_customer_org','fk_shipments_vehicle_org','fk_shipments_driver_org',
+                    'fk_routes_shipment_org','fk_tracking_shipment_org','fk_deliveries_shipment_org',
+                    'fk_maintenance_vehicle_org','fk_drivers_assigned_vehicle_org',
+                    'fk_operational_incidents_shipment_org')
+                """, Integer.class);
+        assertThat(tenantConstraints).isEqualTo(9);
     }
 }

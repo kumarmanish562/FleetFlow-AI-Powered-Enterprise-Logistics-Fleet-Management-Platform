@@ -19,6 +19,10 @@ public interface CustomerRepository
 
     Optional<Customer> findByEmailIgnoreCase(String email);
 
+    Optional<Customer> findByIdAndOrganizationId(UUID id, UUID organizationId);
+
+    Optional<Customer> findByEmailIgnoreCaseAndOrganizationId(String email, UUID organizationId);
+
     boolean existsByEmailIgnoreCaseAndIdNot(
             String email,
             UUID id

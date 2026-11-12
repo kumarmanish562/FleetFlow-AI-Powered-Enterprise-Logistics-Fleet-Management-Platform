@@ -11,11 +11,11 @@ import com.fleetflow.vehicle.dto.VehicleStatusUpdateRequest;
 import com.fleetflow.vehicle.dto.VehicleUpdateRequest;
 import com.fleetflow.vehicle.entity.Vehicle;
 import com.fleetflow.vehicle.entity.VehicleType;
+import com.fleetflow.vehicle.enums.VehicleStatus;
 import com.fleetflow.vehicle.mapper.VehicleMapper;
 import com.fleetflow.vehicle.repository.VehicleRepository;
 import com.fleetflow.vehicle.repository.VehicleSpecification;
 import com.fleetflow.vehicle.repository.VehicleTypeRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -27,9 +27,12 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.Set;
 import java.util.UUID;
+import com.fleetflow.user.service.CurrentOrganizationProvider;
+import com.fleetflow.messaging.outbox.OutboxService;
+import com.fleetflow.messaging.event.vehicle.VehicleStatusChangedEvent;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @Service
-@RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class VehicleServiceImpl
         implements VehicleService {
@@ -55,8 +58,32 @@ public class VehicleServiceImpl
 
     private final VehicleMapper vehicleMapper;
 
-    private final VehicleStatusTransitionValidator
-            statusTransitionValidator;
+    private final VehicleStatusTransitionValidator statusTransitionValidator;
+    private final CurrentOrganizationProvider organizations;
+    private final OutboxService outbox;
+
+    @Autowired
+    public VehicleServiceImpl(VehicleRepository vehicleRepository, VehicleTypeRepository vehicleTypeRepository,
+                              VehicleMapper vehicleMapper, VehicleStatusTransitionValidator statusTransitionValidator,
+                              CurrentOrganizationProvider organizations, OutboxService outbox) {
+        this.vehicleRepository = vehicleRepository;
+        this.vehicleTypeRepository = vehicleTypeRepository;
+        this.vehicleMapper = vehicleMapper;
+        this.statusTransitionValidator = statusTransitionValidator;
+        this.organizations = organizations;
+        this.outbox = outbox;
+    }
+
+    public VehicleServiceImpl(VehicleRepository vehicleRepository, VehicleTypeRepository vehicleTypeRepository,
+                              VehicleMapper vehicleMapper, VehicleStatusTransitionValidator statusTransitionValidator,
+                              CurrentOrganizationProvider organizations) {
+        this(vehicleRepository, vehicleTypeRepository, vehicleMapper, statusTransitionValidator, organizations, null);
+    }
+
+    public VehicleServiceImpl(VehicleRepository vehicleRepository, VehicleTypeRepository vehicleTypeRepository,
+                              VehicleMapper vehicleMapper, VehicleStatusTransitionValidator statusTransitionValidator) {
+        this(vehicleRepository, vehicleTypeRepository, vehicleMapper, statusTransitionValidator, null);
+    }
 
     @Override
     @Transactional
@@ -107,6 +134,7 @@ public class VehicleServiceImpl
                         request,
                         vehicleType
                 );
+        if (organizations != null) vehicle.setOrganizationId(organizations.requireOrganizationId());
 
         Vehicle saved =
                 vehicleRepository.save(vehicle);
@@ -175,6 +203,20 @@ public class VehicleServiceImpl
                 findVehicle(id);
 
         return vehicleMapper.toResponse(vehicle);
+    }
+
+    @Override
+    public VehicleResponse findOperationalById(UUID id, UUID organizationId) {
+        return vehicleRepository.findByIdAndOrganizationId(id, organizationId)
+                .map(vehicleMapper::toResponse)
+                .orElseThrow(() -> new ResourceNotFoundException("Vehicle not found"));
+    }
+
+    @Override
+    public Page<VehicleResponse> findOperationalByStatus(VehicleStatus status, UUID organizationId, Pageable pageable) {
+        Pageable safe = validateAndNormalizePageable(pageable);
+        return vehicleRepository.findByOrganizationIdAndStatus(organizationId, status, safe)
+                .map(vehicleMapper::toResponse);
     }
 
     @Override
@@ -268,6 +310,7 @@ public class VehicleServiceImpl
         Vehicle vehicle =
                 findVehicle(id);
 
+        var previousStatus = vehicle.getStatus();
         statusTransitionValidator.validate(
                 vehicle.getStatus(),
                 request.status()
@@ -279,6 +322,11 @@ public class VehicleServiceImpl
 
         Vehicle saved =
                 vehicleRepository.save(vehicle);
+
+        if (outbox != null && previousStatus != saved.getStatus())
+            outbox.record(outbox.vehicleTopic(), "VehicleStatusChanged", "Vehicle", saved.getId().toString(), null,
+                    new VehicleStatusChangedEvent(saved.getId(), previousStatus.name(), saved.getStatus().name(),
+                            java.time.Instant.now()));
 
         return vehicleMapper.toResponse(saved);
     }

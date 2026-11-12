@@ -30,6 +30,8 @@ import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
+import com.fleetflow.user.service.CurrentOrganizationProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @Service
 public class ShipmentServiceImpl implements ShipmentService {
@@ -47,14 +49,17 @@ public class ShipmentServiceImpl implements ShipmentService {
     private final DriverRepository driverRepository;
     private final VehicleRepository vehicleRepository;
     private final ShipmentMapper shipmentMapper;
+    private final CurrentOrganizationProvider organizations;
 
+    @Autowired
     public ShipmentServiceImpl(
             OutboxService outboxService,
             ShipmentRepository shipmentRepository,
             CustomerRepository customerRepository,
             DriverRepository driverRepository,
             VehicleRepository vehicleRepository,
-            ShipmentMapper shipmentMapper
+            ShipmentMapper shipmentMapper,
+            CurrentOrganizationProvider organizations
     ) {
         this.outboxService = outboxService;
         this.shipmentRepository = shipmentRepository;
@@ -62,15 +67,23 @@ public class ShipmentServiceImpl implements ShipmentService {
         this.driverRepository = driverRepository;
         this.vehicleRepository = vehicleRepository;
         this.shipmentMapper = shipmentMapper;
+        this.organizations = organizations;
+    }
+
+    public ShipmentServiceImpl(OutboxService outboxService, ShipmentRepository shipmentRepository,
+                               CustomerRepository customerRepository, DriverRepository driverRepository,
+                               VehicleRepository vehicleRepository, ShipmentMapper shipmentMapper) {
+        this(outboxService, shipmentRepository, customerRepository, driverRepository, vehicleRepository, shipmentMapper, null);
     }
 
     @Override
     @Transactional
     public ShipmentResponse create(ShipmentCreateRequest request) {
 
-        Customer customer = customerRepository.findById(
-                request.customerId()
-        ).orElseThrow(() -> new ResponseStatusException(
+        var customerLookup = organizations == null
+                ? customerRepository.findById(request.customerId())
+                : customerRepository.findByIdAndOrganizationId(request.customerId(), organizations.requireOrganizationId());
+        Customer customer = customerLookup.orElseThrow(() -> new ResponseStatusException(
                 HttpStatus.NOT_FOUND,
                 "Customer not found"
         ));
@@ -128,6 +141,25 @@ public class ShipmentServiceImpl implements ShipmentService {
                 ));
 
         return shipmentMapper.toResponse(shipment);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ShipmentResponse getOperationalByShipmentNumber(String shipmentNumber, UUID organizationId, UUID customerId) {
+        var shipment = customerId == null
+                ? shipmentRepository.findByShipmentNumberAndOrganizationId(shipmentNumber, organizationId)
+                : shipmentRepository.findByShipmentNumberAndOrganizationIdAndCustomerId(shipmentNumber, organizationId, customerId);
+        return shipment.map(shipmentMapper::toResponse).orElseThrow(() -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND, "Shipment not found"));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ShipmentResponse> getOperationalFailures(UUID organizationId, UUID customerId, Pageable pageable) {
+        Page<Shipment> page = customerId == null
+                ? shipmentRepository.findByOrganizationIdAndStatus(organizationId, ShipmentStatus.FAILED, pageable)
+                : shipmentRepository.findByOrganizationIdAndStatusAndCustomerId(organizationId, ShipmentStatus.FAILED, customerId, pageable);
+        return page.map(shipmentMapper::toResponse);
     }
 
     @Override

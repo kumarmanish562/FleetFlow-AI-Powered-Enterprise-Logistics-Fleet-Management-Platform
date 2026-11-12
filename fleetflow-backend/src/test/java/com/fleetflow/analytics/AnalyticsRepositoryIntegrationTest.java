@@ -12,6 +12,8 @@ import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageRequest;
 
 import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -42,5 +44,19 @@ class AnalyticsRepositoryIntegrationTest extends PostgresContainerTest {
         assertThat(analyticsRepository.maintenance(today.minusDays(7), today, "INR").recordCount()).isZero();
         assertThat(analyticsRepository.driverPerformance(today.minusDays(7), today, PageRequest.of(0, 10)).getTotalElements()).isZero();
         assertThat(analyticsRepository.upcomingMaintenance(today, filters, PageRequest.of(0, 10)).getTotalElements()).isZero();
+    }
+
+    @Test
+    void operationalAiAnalyticsQueriesAreTenantScopedAndHandleEmptyData() {
+        UUID organizationId = UUID.fromString("00000000-0000-0000-0000-000000000001");
+        LocalDate today = LocalDate.now();
+
+        assertThat(analyticsRepository.fleetForAI(organizationId).total()).isZero();
+        assertThat(analyticsRepository.deliveryPerformanceForAI(
+                today.minusDays(7).atStartOfDay().toInstant(ZoneOffset.UTC),
+                today.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC), organizationId).total()).isZero();
+        assertThat(analyticsRepository.routeDelaysForAI(
+                today.minusDays(7).atStartOfDay().toInstant(ZoneOffset.UTC),
+                today.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC), organizationId)).isEmpty();
     }
 }
