@@ -18,6 +18,7 @@ import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 @Table(name = "shipments", uniqueConstraints =
@@ -25,6 +26,9 @@ import java.util.List;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Shipment extends BaseEntity {
+
+    @Column(name = "organization_id", nullable = false, updatable = false)
+    private UUID organizationId;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "customer_id", nullable = false)
@@ -88,6 +92,7 @@ public class Shipment extends BaseEntity {
                      OffsetDateTime expectedDeliveryDate, OffsetDateTime deliveredAt,
                      String failureReason, List<ShipmentItem> items) {
         this.customer = customer;
+        this.organizationId = customer.getOrganizationId();
         this.driver = driver;
         this.vehicle = vehicle;
         this.route = route;

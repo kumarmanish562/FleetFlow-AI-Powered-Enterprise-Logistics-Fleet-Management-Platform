@@ -22,6 +22,10 @@ public interface DriverService {
             UUID driverId
     );
 
+    DriverResponse getOperationalDriver(UUID driverId, UUID organizationId);
+
+    Page<DriverSummaryResponse> getOperationalAvailableDrivers(UUID organizationId, Pageable pageable);
+
     Page<DriverSummaryResponse> getDrivers(
             String search,
             String employmentStatus,

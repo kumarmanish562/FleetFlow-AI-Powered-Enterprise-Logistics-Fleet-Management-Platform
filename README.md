@@ -263,6 +263,9 @@ Phase 14 — Analytics & Reporting backend
 
 Phase 15 — React Frontend
            ⏳ Upcoming
+
+Phase 20 — AI Operational Intelligence
+           ✅ Tenant-scoped read-only tools, customer grants, grounded evidence, incidents, analytics and Kafka context implemented (see [Phase 20 status](docs/phase-20-ai-operational-intelligence.md)).
 ```
 
 ---

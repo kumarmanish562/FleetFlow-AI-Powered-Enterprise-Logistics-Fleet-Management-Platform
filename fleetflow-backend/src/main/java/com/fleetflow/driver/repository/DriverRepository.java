@@ -28,6 +28,8 @@ public interface DriverRepository
             UUID userId
     );
 
+    Optional<Driver> findByIdAndUser_OrganizationId(UUID id, UUID organizationId);
+
     boolean existsByLicenseNumberIgnoreCase(
             String licenseNumber
     );
@@ -70,4 +72,18 @@ public interface DriverRepository
 
             Pageable pageable
     );
+
+    @Query("""
+        SELECT d FROM Driver d
+        WHERE d.user.organizationId = :organizationId
+          AND d.employmentStatus = :status
+          AND d.availability = :availability
+          AND d.licenseExpiryDate >= :today
+        """)
+    Page<Driver> findAvailableDriversForOrganization(
+            @Param("organizationId") UUID organizationId,
+            @Param("status") DriverEmploymentStatus status,
+            @Param("availability") DriverAvailability availability,
+            @Param("today") LocalDate today,
+            Pageable pageable);
 }

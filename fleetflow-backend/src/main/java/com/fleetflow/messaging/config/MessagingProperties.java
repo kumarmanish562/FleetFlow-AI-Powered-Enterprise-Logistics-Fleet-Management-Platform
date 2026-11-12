@@ -12,6 +12,7 @@ public record MessagingProperties(
             "fleetflow.shipment.events.v1",
             "fleetflow.vehicle.events.v1",
             "fleetflow.driver.events.v1",
+            "fleetflow.incident.events.v1",
             "fleetflow.shipment.notifications.dlt.v1"
     );
 
@@ -24,6 +25,7 @@ public record MessagingProperties(
             String shipmentEvents,
             String vehicleEvents,
             String driverEvents,
+            String incidentEvents,
             String shipmentNotificationDlt
     ) {
         private Topics withDefaults() {
@@ -31,6 +33,7 @@ public record MessagingProperties(
                     valueOr(shipmentEvents, DEFAULT_TOPICS.shipmentEvents),
                     valueOr(vehicleEvents, DEFAULT_TOPICS.vehicleEvents),
                     valueOr(driverEvents, DEFAULT_TOPICS.driverEvents),
+                    valueOr(incidentEvents, DEFAULT_TOPICS.incidentEvents),
                     valueOr(shipmentNotificationDlt,
                             DEFAULT_TOPICS.shipmentNotificationDlt)
             );
@@ -39,6 +42,7 @@ public record MessagingProperties(
         public String shipment() { return shipmentEvents; }
         public String vehicle() { return vehicleEvents; }
         public String driver() { return driverEvents; }
+        public String incident() { return incidentEvents; }
         public String notificationDlt() { return shipmentNotificationDlt; }
     }
 

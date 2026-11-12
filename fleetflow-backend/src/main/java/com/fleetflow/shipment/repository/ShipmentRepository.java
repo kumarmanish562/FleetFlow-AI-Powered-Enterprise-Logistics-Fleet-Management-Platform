@@ -13,10 +13,23 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.domain.Sort;
 
 public interface ShipmentRepository extends JpaRepository<Shipment, UUID> {
 
     Optional<Shipment> findByShipmentNumber(String shipmentNumber);
+
+    Optional<Shipment> findByShipmentNumberAndOrganizationId(String shipmentNumber, UUID organizationId);
+
+    Optional<Shipment> findByIdAndOrganizationId(UUID id, UUID organizationId);
+
+    Optional<Shipment> findByShipmentNumberAndOrganizationIdAndCustomerId(
+            String shipmentNumber, UUID organizationId, UUID customerId);
+
+    Page<Shipment> findByOrganizationIdAndStatusAndCustomerId(UUID organizationId,
+            ShipmentStatus status, UUID customerId, Pageable pageable);
+
+    Page<Shipment> findByOrganizationIdAndStatus(UUID organizationId, ShipmentStatus status, Pageable pageable);
 
     boolean existsByShipmentNumber(String shipmentNumber);
 

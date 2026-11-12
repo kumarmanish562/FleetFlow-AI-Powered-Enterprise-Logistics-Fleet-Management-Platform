@@ -22,6 +22,9 @@ import com.fleetflow.user.repository.UserRepository;
 import com.fleetflow.vehicle.entity.Vehicle;
 import com.fleetflow.vehicle.enums.VehicleStatus;
 import com.fleetflow.vehicle.repository.VehicleRepository;
+import com.fleetflow.user.service.CurrentOrganizationProvider;
+import com.fleetflow.messaging.outbox.OutboxService;
+import com.fleetflow.messaging.event.driver.DriverAvailabilityChangedEvent;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -48,6 +51,8 @@ public class DriverServiceImpl
     private final VehicleRepository vehicleRepository;
 
     private final DriverMapper driverMapper;
+    private final CurrentOrganizationProvider organizations;
+    private final OutboxService outbox;
 
     @Override
     @Transactional
@@ -90,6 +95,9 @@ public class DriverServiceImpl
                                         + request.userId()
                         )
                 );
+
+        if (!organizations.requireOrganizationId().equals(user.getOrganizationId()))
+            throw new org.springframework.security.access.AccessDeniedException("Driver user must belong to the authenticated organization");
 
         if (request.licenseExpiryDate()
                 .isBefore(LocalDate.now())) {
@@ -170,6 +178,22 @@ public class DriverServiceImpl
                 getDriverEntity(driverId);
 
         return driverMapper.toResponse(driver);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public DriverResponse getOperationalDriver(UUID driverId, UUID organizationId) {
+        Driver driver = driverRepository.findByIdAndUser_OrganizationId(driverId, organizationId)
+                .orElseThrow(() -> new DriverNotFoundException(driverId));
+        return driverMapper.toResponse(driver);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<DriverSummaryResponse> getOperationalAvailableDrivers(UUID organizationId, Pageable pageable) {
+        return driverRepository.findAvailableDriversForOrganization(organizationId,
+                DriverEmploymentStatus.ACTIVE, DriverAvailability.AVAILABLE, LocalDate.now(), pageable)
+                .map(driverMapper::toSummary);
     }
 
     @Override
@@ -349,13 +373,17 @@ public class DriverServiceImpl
                 request.availability()
         );
 
+        DriverAvailability previous = driver.getAvailability();
         driver.setAvailability(
                 request.availability()
         );
 
-        return driverMapper.toResponse(
-                driverRepository.save(driver)
-        );
+        Driver saved = driverRepository.save(driver);
+        if (previous != saved.getAvailability())
+            outbox.record(outbox.driverTopic(), "DriverAvailabilityChanged", "Driver", saved.getId().toString(),
+                    null, new DriverAvailabilityChangedEvent(saved.getId(), previous.name(),
+                            saved.getAvailability().name(), java.time.Instant.now()));
+        return driverMapper.toResponse(saved);
     }
 
     @Override

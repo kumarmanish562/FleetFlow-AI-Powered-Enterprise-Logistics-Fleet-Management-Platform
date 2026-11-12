@@ -161,6 +161,7 @@
         shipment-events: fleetflow.shipment.events.v1
         vehicle-events: fleetflow.vehicle.events.v1
         driver-events: fleetflow.driver.events.v1
+        incident-events: fleetflow.incident.events.v1
         shipment-notification-dlt: fleetflow.shipment.notifications.dlt.v1
 
       # Transactional Outbox Configuration

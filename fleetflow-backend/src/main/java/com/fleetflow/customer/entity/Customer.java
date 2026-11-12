@@ -13,6 +13,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import java.util.UUID;
 
 @Entity
 @Table(name = "customers")
@@ -22,6 +23,10 @@ import lombok.Setter;
 @AllArgsConstructor
 @Builder
 public class Customer extends BaseEntity {
+
+    @Column(name = "organization_id", nullable = false, updatable = false)
+    @Builder.Default
+    private UUID organizationId = com.fleetflow.user.entity.User.DEFAULT_ORGANIZATION_ID;
 
     @Column(nullable = false, length = 200)
     private String name;

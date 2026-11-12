@@ -1,7 +1,8 @@
 CREATE INDEX idx_notifications_user_created
     ON notifications(user_id, created_at DESC);
 
-CREATE INDEX idx_notifications_user_read
+-- V16 already creates this index; keep the statement safe for clean installs.
+CREATE INDEX IF NOT EXISTS idx_notifications_user_read
     ON notifications(user_id, read_at);
 
 CREATE INDEX idx_notifications_pending_retry

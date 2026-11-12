@@ -81,4 +81,6 @@ public class OutboxService {
     public String driverTopic() {
         return properties.topics().driver();
     }
+
+    public String incidentTopic() { return properties.topics().incident(); }
 }

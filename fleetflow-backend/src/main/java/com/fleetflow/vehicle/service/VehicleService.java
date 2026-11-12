@@ -5,6 +5,7 @@ import com.fleetflow.vehicle.dto.VehicleFilter;
 import com.fleetflow.vehicle.dto.VehicleResponse;
 import com.fleetflow.vehicle.dto.VehicleStatusUpdateRequest;
 import com.fleetflow.vehicle.dto.VehicleUpdateRequest;
+import com.fleetflow.vehicle.enums.VehicleStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -24,6 +25,11 @@ public interface VehicleService {
     VehicleResponse findById(
             UUID id
     );
+
+    VehicleResponse findOperationalById(UUID id, UUID organizationId);
+
+    org.springframework.data.domain.Page<VehicleResponse> findOperationalByStatus(
+            VehicleStatus status, UUID organizationId, Pageable pageable);
 
     VehicleResponse update(
             UUID id,

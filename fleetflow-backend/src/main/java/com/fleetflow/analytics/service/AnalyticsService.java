@@ -12,6 +12,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.Clock;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
+import java.util.UUID;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -152,6 +156,30 @@ public class AnalyticsService {
     public ChartDataResponse deliveryByRoute(DateRangeRequest range) {
         validateFilterScope(range, true, true, false, false, false);
         return repository.deliveryByRoute(range);
+    }
+
+    public List<AnalyticsRepository.RouteDelayMetric> routeDelaysForAI(LocalDate from, LocalDate to, UUID organizationId) {
+        validateAiDateRange(from, to);
+        return repository.routeDelaysForAI(from.atStartOfDay().toInstant(ZoneOffset.UTC),
+                to.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC), organizationId);
+    }
+
+    public AnalyticsSummaryResponse.Fleet fleetForAI(UUID organizationId) {
+        return repository.fleetForAI(Objects.requireNonNull(organizationId, "organizationId"));
+    }
+
+    public AnalyticsSummaryResponse.Delivery deliveryPerformanceForAI(LocalDate from, LocalDate to,
+                                                                       UUID organizationId) {
+        validateAiDateRange(from, to);
+        return repository.deliveryPerformanceForAI(from.atStartOfDay().toInstant(ZoneOffset.UTC),
+                to.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC),
+                Objects.requireNonNull(organizationId, "organizationId"));
+    }
+
+    private static void validateAiDateRange(LocalDate from, LocalDate to) {
+        if (from == null || to == null || from.isAfter(to) || ChronoUnit.DAYS.between(from, to) > 89)
+            throw new com.fleetflow.common.exception.BadRequestException(
+                    "Analytics range must be ordered and no longer than 90 days");
     }
     public ChartDataResponse deliveryByCustomer(DateRangeRequest range) {
         validateFilterScope(range, true, true, false, false, false);
